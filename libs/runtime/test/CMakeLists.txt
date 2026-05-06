@@ -1,5 +1,3 @@
-# This file implements the linking and setup for test binaries.
-
 file(GLOB_RECURSE GBOX_RUNTIME_TEST_SRC "${GBOX_RUNTIME_TEST_PATH}/*.cpp")
 add_tests(
     SOURCES ${GBOX_RUNTIME_TEST_SRC}
