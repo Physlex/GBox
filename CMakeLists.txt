@@ -9,10 +9,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 
 # Project-wide dependencies
 
-if(
-  NOT CMAKE_C_COMPILER MATCHES "clang" OR
-  NOT CMAKE_CXX_COMPILER MATCHES "clang\\+\\+"
-  )
+if(NOT CMAKE_C_COMPILER MATCHES "clang")
     message(
       FATAL_ERROR
       "clang improperly installed. Did you use `nix develop`?"
@@ -20,6 +17,7 @@ if(
 endif()
 
 find_package(GTest REQUIRED)
+
 include(GoogleTest)
 enable_testing()
 

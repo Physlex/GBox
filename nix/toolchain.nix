@@ -7,13 +7,15 @@
       llvm.llvm.dev
       llvm.libclang.dev
       llvm.libclang.lib
+      pkgs.gtest # TODO: Move out of the toolchain
     ];
 
     nativeBuildInputs = with pkgs; [
       cmake
       ninja
-      gtest
       llvm.clang
+      llvm.lld
+      llvm.bintools
     ];
 
     cmake = rec {
@@ -22,6 +24,14 @@
         "-DCMAKE_CXX_COMPILER=${llvm.clang}/bin/clang++"
         "-DCMAKE_BUILD_TYPE=Debug"
         "-DCMAKE_EXPORT_COMPILE_COMMANDS=1"
+        "-DCMAKE_AR=${llvm.llvm}/bin/llvm-ar"
+        "-DCMAKE_RANLIB=${llvm.llvm}/bin/llvm-ranlib"
+        "-DCMAKE_LINKER=${llvm.lld}/bin/ld.lld"
+        "-DCMAKE_BUILD_TYPE=Debug"
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=1"
+      ];
+
+      armFlags = [
       ];
 
       exports = [
