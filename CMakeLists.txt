@@ -29,7 +29,6 @@ set(GBOX_CLANG_WRAPPER_NAME gbclang)
 set(PROJECT_CONF_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
 include(${PROJECT_CONF_PATH}/AddTests.cmake)
-include(${PROJECT_CONF_PATH}/AddExamples.cmake)
 include(${PROJECT_CONF_PATH}/TargetFormat.cmake)
 include(${PROJECT_CONF_PATH}/AddModule.cmake)
 
@@ -42,8 +41,3 @@ gbox_module(GBOX_RUNTIME "${PROJECT_SOURCE_DIR}/libs/runtime")
 # Workspace module applications
 
 gbox_module(GBCLANG "${PROJECT_SOURCE_DIR}/apps/gbclang")
-
-# Workspace examples
-
-set(PROJECT_EXAMPLE_PATH "${PROJECT_SOURCE_DIR}/examples")
-add_subdirectory(${PROJECT_EXAMPLE_PATH})

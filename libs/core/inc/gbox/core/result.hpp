@@ -88,7 +88,7 @@ class Result {
             std::get<std::monostate>(this->inner_);
             return;
         } else {
-            return std::get<T>(this->inner_);
+            return std::get<T>(std::move(this->inner_));
         }
     }
 
@@ -117,6 +117,8 @@ template <class... Match>
 struct overloaded : Match... {
     using Match::operator()...;
 };
+template <class... Match>
+overloaded(Match...) -> overloaded<Match...>;
 
 /// This function attempts to make generic type handling something more bearable
 ///

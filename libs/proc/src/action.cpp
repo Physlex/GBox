@@ -4,9 +4,13 @@
 
 #include "gbox/proc/action.hpp"
 
+#include <memory>
+
 #include "clang/Basic/Diagnostic.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Frontend/CompilerInvocation.h"
+#include "clang/Frontend/FrontendOptions.h"
+#include "llvm/Support/VirtualFileSystem.h"
 
 using namespace gbox::action;
 using namespace gbox::result;
@@ -14,16 +18,22 @@ using namespace gbox::result;
 Action::Action(clang::DiagnosticsEngine &dengine)
     : dengine_(dengine), action_(plugins::ProcMacroAction()) {}
 
-gbox::action::Result<std::string> Action::execute(std::vector<const char *> args) {
-    auto invocation = std::shared_ptr<clang::CompilerInvocation>();
+gbox::action::Result<std::unordered_map<std::string, std::string> > Action::execute(
+    std::vector<const char *> args
+) {
+    auto invocation = std::make_shared<clang::CompilerInvocation>();
     if (!clang::CompilerInvocation::CreateFromArgs(*invocation, args, this->dengine_)) {
         return Err(ErrorKind::InvalidArgs);
     }
 
-    auto instance = clang::CompilerInstance(invocation);
-    instance.setDiagnostics(&this->dengine_);
+    // Run as AST-only; the driver handles the actual object emission separately.
+    invocation->getFrontendOpts().ProgramAction = clang::frontend::ParseSyntaxOnly;
 
-    if (!instance.ExecuteAction(this->action_) || this->dengine_.hasErrorOccurred()) {
+    auto instance = clang::CompilerInstance(invocation);
+    instance.createDiagnostics(*llvm::vfs::getRealFileSystem());
+
+    if (!instance.ExecuteAction(this->action_) ||
+        instance.getDiagnostics().hasErrorOccurred()) {
         return Err(ErrorKind::Action);
     }
 

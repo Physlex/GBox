@@ -16,6 +16,9 @@
 #include <llvm/ADT/StringRef.h>
 
 #include <memory>
+#include <unordered_map>
+
+#include "clang/Basic/SourceLocation.h"
 
 namespace gbox::plugins {
 
@@ -31,9 +34,7 @@ class HandleFuncDecl : public clang::ast_matchers::MatchFinder::MatchCallback {
     clang::Rewriter &rewriter_;
 };
 
-/**
- *  @brief This method implements the "frontend" logic for parsing each t-unit
- */
+/// This method implements the "frontend" logic for parsing each t-unit
 class ProcMacroConsumer : public clang::ASTConsumer {
   public:
     ProcMacroConsumer(clang::Rewriter &rewriter) : rewriter_(rewriter) {}
@@ -61,23 +62,23 @@ class ProcMacroAction : public clang::ASTFrontendAction {
         return std::make_unique<ProcMacroConsumer>(rewriter_);
     }
 
-    std::string getRewritten() const;
+    inline std::unordered_map<std::string, std::string> getRewritten() const {
+        return this->rewritten_;
+    }
 
-    /**
-     * @brief callback before any given translation unit begins processing
-     *
-     * Ensures that the frontend action is called iff the main action expected
-     * from the compiler invocation is some form of emitter.
-     */
+    /// Callback before any given translation unit begins processing
+    ///
+    /// Ensures that the frontend action is called iff the main action expected
+    /// from the compiler invocation is some form of emitter.
     bool BeginSourceFileAction(clang::CompilerInstance &ci) override;
 
-    // TODO: DOCS
+    /// Invoked after each translation unit is finished processing.
     void EndSourceFileAction() override;
 
   private:
     clang::Rewriter rewriter_;
-    llvm::StringRef infile_;
-    std::string rewritten_;
+    std::string infile_;
+    std::unordered_map<std::string, std::string> rewritten_;
 };
 
 }  // namespace gbox::plugins

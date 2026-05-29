@@ -1,5 +1,5 @@
-/** @file `plugins.c`
- *  @brief This file implements the gbox clang plugins for gbclang and gbclang++
+/** @file_id `plugins.c`
+ *  @brief This file_id implements the gbox clang plugins for gbclang and gbclang++
  *         preprocessing macros.
  */
 
@@ -7,19 +7,21 @@
 
 #include <clang/AST/ASTContext.h>
 #include <clang/ASTMatchers/ASTMatchFinder.h>
+#include <clang/Basic/SourceLocation.h>
 #include <clang/Basic/TokenKinds.h>
+#include <clang/Frontend/CompilerInstance.h>
 #include <clang/Lex/LiteralSupport.h>
 #include <clang/Lex/Token.h>
+#include <llvm/ADT/RewriteBuffer.h>
 #include <llvm/ADT/StringRef.h>
+#include <llvm/Support/raw_ostream.h>
 
+#include <unordered_map>
 #include <vector>
 
-#include "clang/Basic/SourceLocation.h"
-#include "clang/Frontend/CompilerInstance.h"
+#include "clang/Basic/SourceManager.h"
 #include "gbox/proc/syn/parse.hpp"
 #include "gbox/proc/syn/tokens.hpp"
-#include "llvm/ADT/RewriteBuffer.h"
-#include "llvm/Support/raw_ostream.h"
 
 using namespace gbox::plugins;
 using namespace gbox;
@@ -62,22 +64,25 @@ void HandleFuncDecl::run(const clang::ast_matchers::MatchFinder::MatchResult &re
     clang::SourceLocation src_begin = src_range.getBegin();
     clang::SourceLocation src_end = src_range.getEnd();
 
-    auto file = sm.getFileID(src_begin);
+    auto file_id = sm.getFileID(src_begin);
     unsigned start = sm.getFileOffset(src_begin);
     unsigned end = sm.getFileOffset(src_end);
 
     // Lexing stage
 
-    // TODO: SIMPLIFY
     const size_t length = end - start + 1;
-    std::string slice = sm.getBufferData(file).substr(start, length).str();
+    std::string slice = sm.getBufferData(file_id).substr(start, length).str();
     auto buffer = llvm::MemoryBufferRef(slice, "<scratch>");
 
-    llvm::outs() << "Text:\n" << slice << "\n";
-
+    // Anchor the scratch lex at src_begin so every token's SourceLocation maps
+    // back into the real SourceManager (required for Rewriter::ReplaceText).
+    const char *buf_start = slice.data();
+    const char *buf_end = buf_start + slice.size();
     clang::Token tok;
     std::vector<clang::Token> tokens;
-    auto lexer = clang::Lexer(file, buffer, sm, res.Context->getLangOpts());
+    auto lexer = clang::Lexer(
+        src_begin, res.Context->getLangOpts(), buf_start, buf_start, buf_end
+    );
     while (!lexer.LexFromRawLexer(tok)) {
         tokens.push_back(tok);
     }
@@ -90,7 +95,7 @@ void HandleFuncDecl::run(const clang::ast_matchers::MatchFinder::MatchResult &re
 
     parse::Parser parser = parse::Parser(
         parse::ClangCtx{tokens, sm, res, res.Context->getDiagnostics()},
-        parse::FileInfo{file, buffer, length}
+        parse::FileInfo{file_id, buffer, start, length}
     );
 
     tokens::TokenStream stream;
@@ -127,22 +132,16 @@ void ProcMacroConsumer::HandleTranslationUnit(clang::ASTContext &ctx) {
 }
 
 bool ProcMacroAction::BeginSourceFileAction(clang::CompilerInstance &ci) {
-    const clang::FrontendOptions opts = ci.getFrontendOpts();
-    if (opts.ProgramAction == clang::frontend::EmitObj) {
-        return true;
-    }
-
-    return false;
+    // We always run as ParseSyntaxOnly — object emission is delegated to the
+    // real clang invocation.  Accept any program action.
+    return true;
 }
 
 void ProcMacroAction::EndSourceFileAction() {
-    const llvm::RewriteBuffer *buf = rewriter_.getRewriteBufferFor(
-        getCompilerInstance().getSourceManager().getMainFileID()
-    );
-
+    auto file_id = getCompilerInstance().getSourceManager().getMainFileID();
+    const llvm::RewriteBuffer *buf = this->rewriter_.getRewriteBufferFor(file_id);
     if (buf) {
-        this->rewritten_ = std::string(buf->begin(), buf->end());
+        this->rewritten_[std::string(this->infile_)] =
+            std::string(buf->begin(), buf->end());
     }
 }
-
-std::string ProcMacroAction::getRewritten() const { return this->rewritten_; }
