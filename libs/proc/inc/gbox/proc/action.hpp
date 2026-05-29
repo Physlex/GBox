@@ -6,6 +6,7 @@
 #include <clang/Basic/Diagnostic.h>
 
 #include <string>
+#include <unordered_map>
 
 #include "gbox/core/result.hpp"
 // TODO: Probably should condense this into the current module instead of keeping seperate
@@ -37,7 +38,9 @@ class Action {
     /**
      *  @brief Provided the given arguments, execute the action.
      */
-    Result<std::string> execute(std::vector<const char *> args);
+    Result<std::unordered_map<std::string, std::string>> execute(
+        std::vector<const char *> args
+    );
 
   private:
     plugins::ProcMacroAction action_;

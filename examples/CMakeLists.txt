@@ -1,6 +1,0 @@
-file(GLOB_RECURSE GBOX_EX_C_SRC "${PROJECT_EXAMPLE_PATH}/*.c")
-add_examples(
-    SOURCES ${GBOX_EX_C_SRC}
-    INCLUDES ${GBOX_RUNTIME_PATH}/inc ${GBOX_MACROS_PATH}/inc
-    LIBRARIES "gbox_runtime"
-)

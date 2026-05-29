@@ -94,10 +94,14 @@ class Parser {
 
         const uint32_t tok_start = this->clang_.sm.getFileOffset(curr_tok.getLocation());
         const uint32_t tok_length = curr_tok.getLength();
+
+        // tok_start is an absolute file offset; subtract the slice's start to get
+        // a buffer-relative index into the scratch MemoryBufferRef.
         const char *text_start = this->file_.buffer.getBufferStart();
+        const uint32_t buf_offset = tok_start - this->file_.start;
 
         const auto span = tokens::Span(tok_start, tok_length);
-        const auto symbol = llvm::StringRef(text_start + span.start(), span.length());
+        const auto symbol = llvm::StringRef(text_start + buf_offset, span.length());
 
         return parse(in, curr_tok, symbol, span);
     }

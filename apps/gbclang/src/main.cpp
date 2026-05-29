@@ -36,6 +36,9 @@ using namespace gbox::result;
 
 /// Typed response for the `configure_diag` method.
 struct ConfigureDiagRes {
+    /// Diagnostic options — must outlive the engine
+    std::unique_ptr<clang::DiagnosticOptions> diag_opts;
+
     /// Fully configured diagnostic engine
     llvm::IntrusiveRefCntPtr<clang::DiagnosticsEngine> diag;
 
@@ -49,12 +52,6 @@ Result<ConfigureDiagRes, int> build_diag(std::vector<const char *> &args) {
 
     auto diag_client =
         std::make_unique<clang::TextDiagnosticPrinter>(llvm::errs(), *diag_opts);
-
-    llvm::IntrusiveRefCntPtr<clang::DiagnosticIDs> diag_id(new clang::DiagnosticIDs());
-
-    llvm::IntrusiveRefCntPtr<clang::DiagnosticsEngine> diag(
-        new clang::DiagnosticsEngine(diag_id, *diag_opts, diag_client.get())
-    );
 
     auto strip_res = cli::stripGBFromPath(args[0]);
     if (strip_res.is_err()) {
@@ -77,10 +74,21 @@ Result<ConfigureDiagRes, int> build_diag(std::vector<const char *> &args) {
 
     diag_client->setPrefix(std::string(exe_basename));
 
-    return Ok(ConfigureDiagRes{diag, clean_pathname});
+    llvm::IntrusiveRefCntPtr<clang::DiagnosticIDs> diag_id(new clang::DiagnosticIDs());
+
+    llvm::IntrusiveRefCntPtr<clang::DiagnosticsEngine> diag(
+        new clang::DiagnosticsEngine(diag_id, *diag_opts, diag_client.release())
+    );
+
+    return Ok(ConfigureDiagRes{std::move(diag_opts), diag, clean_pathname});
 }
 
 int32_t main(int argc, const char **argv) {
+    if (argc == 1) {
+        printf("%s: error: no input files\n", argv[0]);
+        return 1;
+    }
+
     auto args_vec = std::vector<const char *>(argv, argv + argc);
 
     auto diag_config_res = build_diag(args_vec);
@@ -88,7 +96,7 @@ int32_t main(int argc, const char **argv) {
         return diag_config_res.unwrap_err();
     }
 
-    auto [diag, clean_path] = diag_config_res.unwrap();
+    auto [diag_opts, diag, clean_path] = diag_config_res.unwrap();
     auto driver =
         clang::driver::Driver(clean_path, llvm::sys::getDefaultTargetTriple(), *diag);
     auto target_and_mode =
@@ -113,14 +121,15 @@ int32_t main(int argc, const char **argv) {
 
         // TODO: Refactor the string into a map of files rewritten -> rewritten code
         auto action_exec_res = gbox::action::Action(*diag).execute(args_slice);
-        std::string rewritten = "";
-        gbox::result::match_result(
-            std::move(action_exec_res),
-            [&](Ok<std::string> &&o) { rewritten = std::move(o.value); },
-            [&](Err<gbox::action::ErrorKind> &&e) {
-                llvm::errs() << "Failed to execute action";
-            }
-        );
+        if (action_exec_res.is_err()) {
+            return 1;
+        }
+
+        llvm::outs() << "TEST, ABOUT TO PRINT KEY, VALUE FOR REWRITTEN:\n";
+        auto rewritten = action_exec_res.unwrap();
+        for (const auto &[key, value] : rewritten) {
+            llvm::outs() << key << ": " << value << "\n";
+        }
     }
 
     llvm::SmallVector<llvm::StringRef> args(argv, argv + argc);
