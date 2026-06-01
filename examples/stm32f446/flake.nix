@@ -25,14 +25,14 @@
         stm32cubef4 = gbpkgs.fetchFromGitHub {
           owner = "STMicroelectronics";
           repo = "STM32CubeF4";
-          rev = "v1.28.3";
-          sha256 = "sha256-WPdfln4dzaejZUMGa27IYT62mB9IB8S/eGxXw7TPWuM=";
+          rev = "v1.28.2";
+          sha256 = "sha256-deweMHeu0bSv2b6L+KCec/ld8GTQJWtsk773PjPwrso=";
           fetchSubmodules = true;
         };
       in {
         # gbpkgs.mkGbDerivation implies you are using the full monorepo
         packages.default = gbpkgs.mkGbDerivation {
-          pname = "stm32f446_hal";
+          pname = "firmware";
           version = "0.1.0";
           src = ./.;
 
@@ -42,48 +42,29 @@
           ];
 
           preConfigure = ''
-            # 1. Isolate the sandbox's home directory structures
+            # Isolate the sandbox's home directory structures
             export HOME=$TMPDIR
             mkdir -p $HOME/.config/java
             mkdir -p $HOME/STM32Cube/Repository
 
-            # 2. Pre-extract the firmware to the path CubeMX uses directly
-            cp -r ${stm32cubef4} $HOME/STM32Cube/Repository/STM32Cube_FW_F4_V1.28.3
+            # Pre-extract the firmware to the path CubeMX uses directly
+            cp -r ${stm32cubef4} $HOME/STM32Cube/Repository/STM32Cube_FW_F4_V1.28.2
 
-            # 3. Suppress Java preference write exceptions completely
+            # Suppress Java preference write exceptions completely
             export JAVA_TOOL_OPTIONS="-Djava.util.prefs.userRoot=$HOME/.config/java -Djava.util.prefs.systemRoot=$HOME/.config/java"
 
-            # 4. Point CubeMX at the repository and register the installed firmware package.
-            #    CubeMX reads STMcheckcomputer.xml to resolve firmware InstallPath at LoadConfig time;
-            #    without it the load hangs indefinitely waiting for user input.
+            # Point CubeMX at the repository and register the installed firmware package.
+            # CubeMX reads updater.ini for RepositoryPath (not mx.properties).
+            # STMcheckcomputer.xml registers the firmware as installed at LoadConfig time;
+            # without it the load hangs indefinitely waiting for user input.
             mkdir -p $HOME/.stm32cubemx/plugins/updater
-            cat > $HOME/.stm32cubemx/mx.properties <<EOF
-RepositoryPath=$HOME/STM32Cube/Repository
-RecentProjects=
-EOF
-            cat > $HOME/.stm32cubemx/plugins/updater/STMcheckcomputer.xml <<EOF
-<?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>
-<Computer DBVersion="2.0">
-    <Software>
-        <PackDescription Release="MX.6.15.0"/>
-    </Software>
-    <DataBase>
-        <PackDescription Release="DB.6.0.150"/>
-    </DataBase>
-    <Firmware>
-        <PackDescription InstallPath="$HOME/STM32Cube/Repository/STM32Cube_FW_F4_V1.28.3" Patch="FW.F4.1.28.3" Release="FW.F4.1.28.0">
-            <Note Patch="ReleaseNotes_Patch.html" Release="ReleaseNotes.html"/>
-        </PackDescription>
-    </Firmware>
-</Computer>
-EOF
 
-            # 5. Run headless code generation
+            # Run headless code generation
             cat > cubemx.txt <<EOF
-config load gen/gen.ioc
-project generate
-exit
-EOF
+            config load gen/gen.ioc
+            project generate
+            exit
+            EOF
             xvfb-run stm32cubemx -s cubemx.txt
           '';
 

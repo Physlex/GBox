@@ -50,9 +50,10 @@ set(STM32_Drivers_Src
 list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)
 
 add_library(stm32cubemx INTERFACE)
-target_include_directories(stm32cubemx INTERFACE ${MX_Include_Dirs})
+target_include_directories(stm32cubemx SYSTEM INTERFACE ${MX_Include_Dirs})
 target_compile_definitions(stm32cubemx INTERFACE ${MX_Defines_Syms})
 
 add_library(STM32_Drivers STATIC)
 target_sources(STM32_Drivers PRIVATE ${STM32_Drivers_Src})
 target_link_libraries(STM32_Drivers PUBLIC stm32cubemx)
+target_compile_options(STM32_Drivers PRIVATE -w)
