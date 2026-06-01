@@ -7,14 +7,13 @@
   };
 
   outputs = {
-    self,
     nixpkgs,
     flake-utils,
     ...
   }:
   {
-    lib.gbpkgs = { system, nixpkgs }:
-      import ./nix/gbpkgs.nix { inherit system nixpkgs; };
+    lib.gbpkgs = args:
+      import ./nix/gbpkgs.nix args;
   }
   //
   flake-utils.lib.eachDefaultSystem (system:

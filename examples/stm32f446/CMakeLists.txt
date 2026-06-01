@@ -13,12 +13,14 @@ if(NOT CMAKE_C_COMPILER MATCHES "clang")
 endif()
 
 find_package(gbox REQUIRED)
-message(STATUS "gbox found: ${gbox_FOUND}")
-message(STATUS "gbox location: ${gbox_DIR}")
+
 add_executable(${PROJECT_NAME} src/main.cpp)
+
+gbox_module(HAL "${PROJECT_SOURCE_DIR}/gen")
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
   gbox::runtime
   gbox::core
+  STM32_Drivers
   stm32cubemx
 )

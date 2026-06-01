@@ -1,7 +1,7 @@
-{ system, nixpkgs }:
+{ system, nixpkgs, config ? { }, }:
 
 let
-  pkgs = import nixpkgs { inherit system; };
+  pkgs = import nixpkgs { inherit system config; };
 
   toolchain = import ./toolchain.nix { inherit pkgs; };
   lib = { inherit toolchain; };
@@ -11,8 +11,10 @@ let
     flags = toolchain.cmake.flags ++ [ "-DCMAKE_PREFIX_PATH=${mono}" ];
     exports = toolchain.cmake.exports;
     configurePhase = ''
+      runHook preConfigure
       ${builtins.concatStringsSep "\n" exports}
       cmake -B build -S . -G Ninja ${builtins.concatStringsSep " " flags}
+      runHook postConfigure
     '';
   };
 in

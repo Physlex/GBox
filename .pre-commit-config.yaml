@@ -6,3 +6,4 @@ repos:
       entry: clang-format -i
       language: system
       files: '\.(cpp|hpp|c|h|cc|hh|cxx|hxx|proto|cs|cu)$'
+      exclude: ^examples/stm32f446/gen/

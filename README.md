@@ -18,22 +18,12 @@ For justification, see: `docs/justification.md`
 
 TODO: Docs on NIX, DIRENV, and CLANGD
 
-Currently, the project assumes you are building it using Linux or WSL2.
+Note: If running via linux, user namespaces must be enabled via:
 
-run:
-
-```bash
-$ ./tools/install.sh
 ```
-
-to get dependencies. Then run:
-
-```bash
-$ . activate
+echo 1 | sudo tee /proc/sys/kernel/unprivileged_userns_clone
+echo "kernel.unprivileged_userns_clone=1" | sudo tee -a /etc/sysctl.d/99-nix-sandbox.conf
 ```
-
-To source the `bake` build wrapper environment.
-
 
 ### Execution
 
