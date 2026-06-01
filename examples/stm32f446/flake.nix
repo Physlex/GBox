@@ -21,25 +21,66 @@
             "stm32cubemx"
           ];
         };
+        
+        stm32cubef4 = gbpkgs.fetchFromGitHub {
+          owner = "STMicroelectronics";
+          repo = "STM32CubeF4";
+          rev = "v1.28.3";
+          sha256 = "sha256-WPdfln4dzaejZUMGa27IYT62mB9IB8S/eGxXw7TPWuM=";
+          fetchSubmodules = true;
+        };
       in {
         # gbpkgs.mkGbDerivation implies you are using the full monorepo
         packages.default = gbpkgs.mkGbDerivation {
-          pname = "stm32f446";
+          pname = "stm32f446_hal";
           version = "0.1.0";
           src = ./.;
 
           nativeBuildInputs = with gbpkgs; [
             stm32cubemx
             xvfb-run
+            zip
           ];
 
           preConfigure = ''
-            cat > cubemx.script <<EOF
-load gen/gen.ioc
-generate code
+            # 1. Isolate the sandbox's home directory structures
+            export HOME=$TMPDIR
+            mkdir -p $HOME/.config/java
+            mkdir -p $HOME/STM32Cube/Repository
+
+            # 2. Package the folder into the precise directory structure CubeMX expects
+            echo "Structuring and compressing STM32CubeF4 repository..."
+            mkdir -p $TMPDIR/zip_stage/STM32Cube_FW_F4_V1.28.3
+            cp -r ${stm32cubef4}/* $TMPDIR/zip_stage/STM32Cube_FW_F4_V1.28.3/
+            
+            cd $TMPDIR/zip_stage
+            zip -q -r $HOME/STM32Cube/Repository/en.stm32cubef4_v1-28-3.zip STM32Cube_FW_F4_V1.28.3
+            cd $TMPDIR
+
+            # 3. Suppress Java preference write exceptions completely
+            export JAVA_TOOL_OPTIONS="-Djava.util.prefs.userRoot=$HOME/.config/java -Djava.util.prefs.systemRoot=$HOME/.config/java"
+
+            # 4. Generate BOTH the workspace text configuration AND the user options profile
+            mkdir -p $HOME/.stm32cubemx
+            
+            # Write fallback configuration file
+            cat > $HOME/.stm32cubemx/RepositoryPath.txt <<EOF
+$HOME/STM32Cube/Repository
+EOF
+
+            # Inject directly into the primary application runtime configuration map
+            cat > $HOME/.stm32cubemx/mx.properties <<EOF
+RepositoryPath=$HOME/STM32Cube/Repository
+RecentProjects=
+EOF
+
+            # 5. Build up and execute the automated headless generation script
+            cat > cubemx.txt <<EOF
+config load gen/gen.ioc
+project generate
 exit
 EOF
-            xvfb-run stm32cubemx -s cubemx.script
+            xvfb-run stm32cubemx -s cubemx.txt
           '';
 
           installPhase = ''
