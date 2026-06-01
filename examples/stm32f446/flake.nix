@@ -39,7 +39,6 @@
           nativeBuildInputs = with gbpkgs; [
             stm32cubemx
             xvfb-run
-            zip
           ];
 
           preConfigure = ''
@@ -48,33 +47,38 @@
             mkdir -p $HOME/.config/java
             mkdir -p $HOME/STM32Cube/Repository
 
-            # 2. Package the folder into the precise directory structure CubeMX expects
-            echo "Structuring and compressing STM32CubeF4 repository..."
-            mkdir -p $TMPDIR/zip_stage/STM32Cube_FW_F4_V1.28.3
-            cp -r ${stm32cubef4}/* $TMPDIR/zip_stage/STM32Cube_FW_F4_V1.28.3/
-            
-            cd $TMPDIR/zip_stage
-            zip -q -r $HOME/STM32Cube/Repository/en.stm32cubef4_v1-28-3.zip STM32Cube_FW_F4_V1.28.3
-            cd $TMPDIR
+            # 2. Pre-extract the firmware to the path CubeMX uses directly
+            cp -r ${stm32cubef4} $HOME/STM32Cube/Repository/STM32Cube_FW_F4_V1.28.3
 
             # 3. Suppress Java preference write exceptions completely
             export JAVA_TOOL_OPTIONS="-Djava.util.prefs.userRoot=$HOME/.config/java -Djava.util.prefs.systemRoot=$HOME/.config/java"
 
-            # 4. Generate BOTH the workspace text configuration AND the user options profile
-            mkdir -p $HOME/.stm32cubemx
-            
-            # Write fallback configuration file
-            cat > $HOME/.stm32cubemx/RepositoryPath.txt <<EOF
-$HOME/STM32Cube/Repository
-EOF
-
-            # Inject directly into the primary application runtime configuration map
+            # 4. Point CubeMX at the repository and register the installed firmware package.
+            #    CubeMX reads STMcheckcomputer.xml to resolve firmware InstallPath at LoadConfig time;
+            #    without it the load hangs indefinitely waiting for user input.
+            mkdir -p $HOME/.stm32cubemx/plugins/updater
             cat > $HOME/.stm32cubemx/mx.properties <<EOF
 RepositoryPath=$HOME/STM32Cube/Repository
 RecentProjects=
 EOF
+            cat > $HOME/.stm32cubemx/plugins/updater/STMcheckcomputer.xml <<EOF
+<?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>
+<Computer DBVersion="2.0">
+    <Software>
+        <PackDescription Release="MX.6.15.0"/>
+    </Software>
+    <DataBase>
+        <PackDescription Release="DB.6.0.150"/>
+    </DataBase>
+    <Firmware>
+        <PackDescription InstallPath="$HOME/STM32Cube/Repository/STM32Cube_FW_F4_V1.28.3" Patch="FW.F4.1.28.3" Release="FW.F4.1.28.0">
+            <Note Patch="ReleaseNotes_Patch.html" Release="ReleaseNotes.html"/>
+        </PackDescription>
+    </Firmware>
+</Computer>
+EOF
 
-            # 5. Build up and execute the automated headless generation script
+            # 5. Run headless code generation
             cat > cubemx.txt <<EOF
 config load gen/gen.ioc
 project generate
@@ -93,6 +97,7 @@ EOF
         devShells.default = gbpkgs.mkShell {
           nativeBuildInputs = with gbpkgs; [
             stm32cubemx
+            xvfb-run
           ];
 
           shellHook = ''

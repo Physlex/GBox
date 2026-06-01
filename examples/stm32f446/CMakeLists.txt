@@ -16,6 +16,7 @@ find_package(gbox REQUIRED)
 
 add_executable(${PROJECT_NAME} src/main.cpp)
 
+message("TEST: ${PROJECT_SOURCE_DIR}")
 gbox_module(HAL "${PROJECT_SOURCE_DIR}/gen")
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
