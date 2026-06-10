@@ -31,14 +31,32 @@
         };
       in {
         # gbpkgs.mkGbDerivation implies you are using the full monorepo
-        packages.default = gbpkgs.mkGbDerivation {
+        # 
+        # The "GbDerivation" links the toolchain to the llvm-specific one used in gbox
+        # In future, this will allow all downstream consumers to use proc macros as defined
+        # in my C++ utilities.
+        packages.default = 
+        let
+          target = "arm-none-eabi";
+          mcuFlags = "-mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard";
+        in
+        gbpkgs.mkGbDerivation {
           pname = "firmware";
           version = "0.1.0";
           src = ./.;
 
+          system = target;
+          toolchain = gbpkgs.gbox.mkToolchain { pkgs = gbpkgs; system = target; };
+
+          cmakeFlags = [
+            "-DCMAKE_C_FLAGS=\"${mcuFlags}\""
+            "-DCMAKE_CXX_FLAGS=\"${mcuFlags} -fno-rtti -fno-exceptions -fno-threadsafe-statics\""
+          ];
+
           nativeBuildInputs = with gbpkgs; [
             stm32cubemx
             xvfb-run
+            openocd
           ];
 
           preConfigure = ''
@@ -54,23 +72,22 @@
             export JAVA_TOOL_OPTIONS="-Djava.util.prefs.userRoot=$HOME/.config/java -Djava.util.prefs.systemRoot=$HOME/.config/java"
 
             # Point CubeMX at the repository and register the installed firmware package.
-            # CubeMX reads updater.ini for RepositoryPath (not mx.properties).
-            # STMcheckcomputer.xml registers the firmware as installed at LoadConfig time;
-            # without it the load hangs indefinitely waiting for user input.
             mkdir -p $HOME/.stm32cubemx/plugins/updater
 
-            # Run headless code generation
+            # Code generation script
             cat > cubemx.txt <<EOF
             config load gen/gen.ioc
             project generate
             exit
             EOF
+
+            # Run headless code generation
             xvfb-run stm32cubemx -s cubemx.txt
           '';
 
           installPhase = ''
             mkdir -p $out/examples/bin
-            cp build/bin/stm32f446 $out/examples/bin/
+            cp build/bin/firmware $out/examples/bin/
           '';
         };
 
@@ -84,7 +101,7 @@
           shellHook = ''
             export ARM_SYSROOT=${gbpkgs.gcc-arm-embedded}/arm-none-eabi
             export ARM_LLD=${gbpkgs.gbox.toolchain.llvm.lld}/bin/ld.lld
-            export ARM_AR=${gbpkgs.gbox.toolchain.llvm.bintools}/bin/llvm-ar
+            export ARM_AR=${gbpkgs.gbox.toolchain.llvm.llvm}/bin/llvm-ar
             export ARM_RANLIB=${gbpkgs.gbox.toolchain.llvm.bintools}/bin/llvm-ranlib
 
             echo "gbox-mono example dev environment ready."

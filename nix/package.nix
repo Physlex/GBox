@@ -1,6 +1,7 @@
 {
   pkgs,
   lib,
+  system,
 }:
 
 pkgs.stdenv.mkDerivation {
@@ -11,7 +12,7 @@ pkgs.stdenv.mkDerivation {
   nativeBuildInputs = lib.toolchain.nativeBuildInputs;
   buildInputs       = lib.toolchain.buildInputs;
 
-  configurePhase = lib.toolchain.cmake.configurePhase;
+  configurePhase = lib.toolchain.cmake.configureFor system "";
   buildPhase = "ninja -C build";
 
   installPhase = ''

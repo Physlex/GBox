@@ -16,7 +16,6 @@ find_package(gbox REQUIRED)
 
 add_executable(${PROJECT_NAME} src/main.cpp)
 
-message("TEST: ${PROJECT_SOURCE_DIR}")
 gbox_module(HAL "${PROJECT_SOURCE_DIR}/gen")
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
@@ -24,4 +23,13 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
   gbox::core
   STM32_Drivers
   stm32cubemx
+)
+
+target_link_options(${PROJECT_NAME} PRIVATE
+  -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard
+  -T ${CMAKE_SOURCE_DIR}/gen/STM32F446XX_FLASH.ld
+  -Wl,--gc-sections
+  -Wl,-Map=${PROJECT_NAME}.map
+  -Wl,--print-memory-usage
+  -z noexecstack
 )
