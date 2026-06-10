@@ -1,4 +1,4 @@
-{ pkgs, lib, packages }: args:
+{ pkgs, lib, packages, system }: args:
 pkgs.mkShell (args // {
   packages = packages ++ (args.packages or []);
 
@@ -7,7 +7,7 @@ pkgs.mkShell (args // {
 
     configure() {
       cmake -B build -S . -G Ninja \
-        ${builtins.concatStringsSep " " lib.toolchain.cmake.flags}
+        ${builtins.concatStringsSep " " (lib.toolchain.cmake.flagsFor system)}
     }
 
     ${args.shellHook or ""}

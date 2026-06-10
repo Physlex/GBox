@@ -1,8 +1,6 @@
 { pkgs, system ? pkgs.stdenv.hostPlatform.config }:
   let
     llvm = pkgs.llvmPackages_latest;
-    crossPkgs = pkgs.pkgsCross.arm-embedded;
-    crossCc = crossPkgs.stdenv.cc;
   in {
     buildInputs = [
       llvm.llvm
@@ -18,7 +16,7 @@
       llvm.clang
       llvm.lld
       llvm.bintools
-      crossCc
+      gcc-arm-embedded
     ];
 
     cmake = rec {
@@ -34,17 +32,32 @@
         "x86_64-linux" = [
           "-DCMAKE_C_COMPILER=${llvm.clang}/bin/clang"
           "-DCMAKE_CXX_COMPILER=${llvm.clang}/bin/clang++"
+          "-DCMAKE_ASM_COMPILER=${llvm.clang}/bin/clang"
+
+          "-DCMAKE_ASM_COMPILER=${llvm.clang}/bin/clang"
+          "-DCMAKE_C_COMPILER_TARGET=x86_64-unknown-linux-gnu"
+          "-DCMAKE_CXX_COMPILER_TARGET=x86_64-unknown-linux-gnu"
         ];
 
         "arm-none-eabi" = [
           "-DCMAKE_SYSTEM_NAME=Generic"
           "-DCMAKE_SYSTEM_PROCESSOR=arm"
           "-DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY"
-          "-DCMAKE_C_COMPILER=${crossCc}/bin/arm-none-eabi-clang"
-          "-DCMAKE_ASM_COMPILER=${crossCc}/bin/arm-none-eabi-clang"
+
+          "-DCMAKE_C_COMPILER=${llvm.clang-unwrapped}/bin/clang"
+          "-DCMAKE_CXX_COMPILER=${llvm.clang-unwrapped}/bin/clang++"
+          "-DCMAKE_ASM_COMPILER=${llvm.clang-unwrapped}/bin/clang"
+
+          "-DCMAKE_C_COMPILER_TARGET=arm-none-eabi"
+          "-DCMAKE_CXX_COMPILER_TARGET=arm-none-eabi"
+          "-DCMAKE_ASM_COMPILER_TARGET=arm-none-eabi"
+          "-DCMAKE_SYSROOT=${pkgs.gcc-arm-embedded}/arm-none-eabi"
+
+          "-DCMAKE_C_FLAGS_INIT=--gcc-toolchain=${pkgs.gcc-arm-embedded}"
+          "-DCMAKE_CXX_FLAGS_INIT=\"--gcc-toolchain=${pkgs.gcc-arm-embedded} -stdlib=libstdc++\""
+          "-DCMAKE_EXE_LINKER_FLAGS_INIT=-fuse-ld=\"${llvm.lld}/bin/ld.lld -nodefaultlibs -lc -lm -lstdc++ -lnosys ${pkgs.gcc-arm-embedded}/lib/gcc/arm-none-eabi/14.3.1/thumb/v7e-m+fp/hard/libgcc.a\""
         ];
       };
-
       exports = [
         "export LLVM_DIR=${pkgs.llvmPackages_latest.llvm.dev}/lib/cmake/llvm"
         "export Clang_DIR=${pkgs.llvmPackages_latest.libclang.dev}/lib/cmake/clang"
@@ -57,13 +70,13 @@
         then flags.shared ++ flags.${target}
         else abort "gbpkgs.toolchain: no gb toolchain exists for ${target}";
 
-      configureFor = target: prefixPath: ''
+      configureFor = target: prefixPath: extraFlags: ''
         runHook preConfigure
         ${builtins.concatStringsSep "\n" exports}
-        cmake -B build -S . -G Ninja ${builtins.concatStringsSep " " (flagsFor target)} ${prefixPath}
+        cmake -B build -S . -G Ninja ${builtins.concatStringsSep " " (flagsFor target)} ${prefixPath} ${builtins.concatStringsSep " " extraFlags}
         runHook postConfigure
       '';
     };
 
-    inherit llvm crossCc;
+    inherit llvm;
 }

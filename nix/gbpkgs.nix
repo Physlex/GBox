@@ -28,12 +28,12 @@ pkgs // {
       mono
     ] ++ (args.buildInputs or []);
 
-    configurePhase = target.cmake.configureFor targetSystem prefixPath;
+    configurePhase = target.cmake.configureFor targetSystem prefixPath (args.cmakeFlags or []);
     buildPhase = "ninja -C build";
-  } // (builtins.removeAttrs args [ "toolchain" "system" "nativeBuildInputs" "buildInputs" ]));
+  } // (builtins.removeAttrs args [ "toolchain" "system" "nativeBuildInputs" "buildInputs" "cmakeFlags" ]));
 
   mkShell = import ./mkShell.nix {
-    inherit pkgs;
+    inherit pkgs system;
     lib = { inherit toolchain; };
     packages = [ pkgs.cmake pkgs.ninja toolchain.llvm.clang ];
   };
