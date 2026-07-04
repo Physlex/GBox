@@ -1,18 +1,13 @@
-{
-  pkgs,
-  lib,
-  system,
-}:
-
+{ pkgs }:
+{ toolchain }:
 pkgs.stdenv.mkDerivation {
   pname = "gbox-mono";
   version = "0.1.0";
   src = ../.;
 
-  nativeBuildInputs = lib.toolchain.nativeBuildInputs;
-  buildInputs       = lib.toolchain.buildInputs;
-
-  configurePhase = lib.toolchain.cmake.configureFor system "" [];
+  nativeBuildInputs = toolchain.nativeBuildInputs;
+  buildInputs = toolchain.buildInputs;
+  configurePhase = toolchain.configurePhase;
   buildPhase = "ninja -C build";
 
   installPhase = ''

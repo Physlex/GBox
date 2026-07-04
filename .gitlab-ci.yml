@@ -1,0 +1,34 @@
+default:
+  image: nixos/nix:latest
+
+stages:
+   - check
+   - build
+
+variables:
+  NIX_CONFIG: "experimental-features = nix-command flakes"
+
+format:
+  stage: check
+  when: always
+  script: |
+    echo "Formatting the application..."
+    nix develop --command pre-commit run --all-files
+
+compile-fw:
+  stage: build
+  when: always
+  script: |
+      echo "Building the application using nix and bake..."
+      nix build .# --system x86_64-linux --no-link --print-build-logs
+
+compile-examples:
+  stage: build
+  when: always
+  script: |
+    echo "Building examples using nix and bake..."
+
+    echo "Building gbox-mono example on desktop..."
+    cd examples/gbox-mono && nix build .#
+
+    cd ../..

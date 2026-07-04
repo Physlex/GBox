@@ -2,9 +2,6 @@
  *  @brief This file implements a simple runtime loop using the gbox core lib.
  */
 
-#include <gbox/runtime/scheduler.h>
-#include <gbox/runtime/tasks.h>
-#include <gbox/runtime/utility/errors.h>
 #include <stdint.h>
 #include <stdio.h>
 

@@ -19,6 +19,7 @@
   flake-utils.lib.eachDefaultSystem (system:
     let
       gbpkgs = import ./nix/gbpkgs.nix { inherit system nixpkgs; };
+      gbox = gbpkgs.gbox;
       duck = gbpkgs.rustPlatform.buildRustPackage {
         pname = "duck";
         version = "unstable";
@@ -37,10 +38,12 @@
         nativeBuildInputs = [ gbpkgs.pkg-config ];
       };
     in {
-      packages.default = gbpkgs.gbox.mono;
+      packages.default = gbox.modules;
       devShells.default = gbpkgs.mkShell {
-        packages = gbpkgs.gbox.mono.buildInputs
-          ++ gbpkgs.gbox.mono.nativeBuildInputs
+        toolchain = gbox.toolchain;
+
+        packages = gbox.modules.buildInputs
+          ++ gbox.modules.nativeBuildInputs
           ++ [ gbpkgs.pre-commit gbpkgs.uv gbpkgs.gdb gbpkgs.nixd duck ];
 
         shellHook = ''
