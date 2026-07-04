@@ -1,2 +1,8 @@
 add_library(${GBOX_RUNTIME_NAME} STATIC ${GBOX_RUNTIME_SRC})
-target_include_directories(${GBOX_RUNTIME_NAME} PUBLIC ${GBOX_RUNTIME_INC_PATH})
+target_link_libraries(${GBOX_RUNTIME_NAME} PRIVATE ${GBOX_CORE_NAME})
+
+target_include_directories(
+  ${GBOX_RUNTIME_NAME} PUBLIC
+  ${GBOX_RUNTIME_INC_PATH}
+  ${GBOX_CORE_INC_PATH}
+)

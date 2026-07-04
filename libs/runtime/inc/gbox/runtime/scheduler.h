@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-#include "gbox/runtime/conf/types.h"
+#include "gbox/core/types.hpp"
 
 //! @brief Forward declaration of ring type.
 struct ring;

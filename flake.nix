@@ -42,8 +42,8 @@
       devShells.default = gbpkgs.mkShell {
         toolchain = gbox.toolchain;
 
-        packages = gbox.modules.buildInputs
-          ++ gbox.modules.nativeBuildInputs
+        buildInputs = gbox.modules.buildInputs;
+        nativeBuildInputs = gbox.modules.nativeBuildInputs
           ++ [ gbpkgs.pre-commit gbpkgs.uv gbpkgs.gdb gbpkgs.nixd duck ];
 
         shellHook = ''

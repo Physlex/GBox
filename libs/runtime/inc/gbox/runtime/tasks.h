@@ -5,8 +5,29 @@
 extern "C" {
 #endif
 
-#include "gbox/runtime/conf/types.h"
 #include "gbox/runtime/scheduler.h"
+
+/** @} */
+
+/** @defgroup type_aliases
+ *  @brief This group defines various generic type aliases that better define
+ *         developer intent.
+ *  @{
+ */
+
+/** @typedef int32_t (*gen_callback_ptr_t)(void*)
+ *  @brief Generic callback alias.
+ *
+ *         This function alias defines a better semantic interpretation of the
+ *         concept of a fully generic function definition.
+ *
+ *         A generic callback is expected to be one-shot. That is, not
+ *         returning a structure to be seized by some controller. Instead, it
+ *         is expected to die after firing.
+ */
+typedef int32_t (*gen_funcptr_t)(void *);
+
+/** @} */
 
 /** @file `tasks.h`
  *  @brief This file defines the various task definitions used by the runtime.

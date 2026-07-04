@@ -7,7 +7,7 @@ extern "C" {
 
 #include <stdio.h>
 
-#include "gbox/runtime/conf/types.h"
+#include "gbox/core/types.hpp"
 
 /** @def SYS_PANIC
  *  @brief system utility to wrap assertions.

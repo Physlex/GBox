@@ -13,9 +13,17 @@ pkgs.mkShell ((builtins.removeAttrs args [
     ${args.toolchain.exports}
     export PS1="(gbox:${args.toolchain.target}) $PS1"
 
-    configure() {
+    gbox-conf() {
       cmake -B build -S . -G Ninja \
         ${builtins.concatStringsSep " " args.toolchain.targetFlags} "$@"
+    }
+
+    gbox-build() {
+      ninja -C build
+    }
+
+    gbox-clean() {
+      rm -rf build/
     }
 
     ${shellHook}

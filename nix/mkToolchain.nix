@@ -3,7 +3,7 @@
   let
     llvm = pkgs.llvmPackages_latest;
     arm-none-eabi = "arm-none-eabi";
-    x86_64-linux = "x86_64-linux";
+    x86_64-linux = "x86_64-unknown-linux";
  
     # This maps a nix system definition to the related cmake flags for clang
     cmakeSystemFlagMap = rec {
@@ -19,7 +19,7 @@
           "-DCMAKE_EXPORT_COMPILE_COMMANDS=1"
         ];
 
-        "${x86_64-linux}" = [
+        "x86_64-linux" = [
           "-DCMAKE_C_COMPILER=${compilerBase}"
           "-DCMAKE_CXX_COMPILER=${compilerBase}++"
           "-DCMAKE_ASM_COMPILER=${compilerBase}"

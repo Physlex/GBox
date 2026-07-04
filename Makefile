@@ -1,15 +1,11 @@
 # This file implements a set of build alias' for the build system
-
-build:
-	ninja -C build
+# 
+# TODO: Remove the makefile for our nix flake stuffs
 
 format:
 	cmake --build build --target=format	
 
-clean:
-	rm -rf build/
-
 clean-examples:
 	rm -rf build/examples
 
-.PHONY: build format clean
+.PHONY: format clean-examples
