@@ -1,8 +1,8 @@
 //! This file implements testing for gbox's result type
 
-#include "gbox/core/result.hpp"
-
 #include <gtest/gtest.h>
+
+#include "gbox/core/result.hpp"
 
 using namespace gbox;
 using gbox::result::Err;
