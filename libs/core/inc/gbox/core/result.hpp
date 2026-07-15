@@ -6,7 +6,7 @@
 #include <utility>
 #include <variant>
 
-namespace gbox::result {
+namespace result {
 
 /// Alias for the result storage type
 template <typename T, typename E>
@@ -32,7 +32,7 @@ Ok(T) -> Ok<T>;
 template <typename T>
 struct Ok {
     T value;
-    Ok(T v) : value(std::move(v)) {}
+    explicit Ok(T v) : value(std::move(v)) {}
 };
 
 /// Specialization for void-case Ok types
@@ -45,7 +45,7 @@ struct Ok<void> {
 template <typename E>
 struct Err {
     E value;
-    Err(E v) : value(std::move(v)) {}
+    explicit Err(E v) : value(std::move(v)) {}
 };
 
 /// Deduction guide for the Err result builder
@@ -69,6 +69,41 @@ class Result {
     /// Constructs a Result from an erroneous value
     Result(Err<E> &&e) : inner_(std::move(e.value)) {};
 
+    /// Transform the option type from type Result<T> to type Result<U>, where U is the
+    /// return type of the entered lambda Fn
+    ///
+    /// Maps the results inner type to a type specified by the lambda. Expects tha the
+    /// result type is `Ok`. If it is instead `Err`, then return early as the `Err` type.
+    template <typename Fn>
+    auto map(Fn &&f) -> Result<decltype(f(std::declval<T>())), E> {
+        if (this->is_err()) {
+            return std::get<E>(this->inner_);
+        }
+
+        return Ok(f(std::get<T>(this->inner_)));
+    }
+
+    /// Returns the valid value. Throws `std::bad_variant_access` if the result is
+    /// erroneous
+    [[nodiscard]]
+    inline T assume_ok() {
+        if constexpr (std::is_void_v<T>) {
+            std::get<std::monostate>(this->inner_);
+            return;
+        } else {
+            assert(std::holds_alternative<T>(this->inner_));
+            return std::get<T>(std::move(this->inner_));
+        }
+    }
+
+    /// Returns the erroneous value. Throws `std::bad_variant_access` if the result is
+    /// valid
+    [[nodiscard]]
+    inline E assume_err() {
+        assert(std::holds_alternative<T>(this->inner_));
+        return std::get<E>(this->inner_);
+    }
+
     /// Returns true if the result holds an erroneous value
     inline bool is_err() { return std::holds_alternative<E>(this->inner_); }
 
@@ -80,23 +115,6 @@ class Result {
             return std::holds_alternative<T>(this->inner_);
         }
     }
-
-    /// Returns the valid value. Throws `std::bad_variant_access` if the result is
-    /// erroneous
-    inline T unwrap() {
-        if constexpr (std::is_void_v<T>) {
-            std::get<std::monostate>(this->inner_);
-            return;
-        } else {
-            return std::get<T>(std::move(this->inner_));
-        }
-    }
-
-    /// Returns the erroneous value. Throws `std::bad_variant_access` if the result is
-    /// valid
-    inline E unwrap_err() { return std::get<E>(this->inner_); }
-
-    inline ResultInner<T, E> inner() const { return this->inner_; }
 
   private:
     ResultInner<T, E> inner_;
@@ -146,6 +164,6 @@ auto match_result(Result<T, E> &&res, OkMatch &&ok_match, ErrMatch &&err_match) 
     );
 }
 
-}  // namespace gbox::result
+}  // namespace result
 
 #endif  // GBOX_CORE_RESULT_HPP_

@@ -32,8 +32,7 @@
 
 using namespace gbox;
 using namespace gbclang;
-using namespace gbox::result;
-
+using namespace result;
 /// Typed response for the `configure_diag` method.
 struct ConfigureDiagRes {
     /// Diagnostic options — must outlive the engine
@@ -58,14 +57,14 @@ Result<ConfigureDiagRes, int> build_diag(std::vector<const char *> &args) {
         return Err(1);
     }
 
-    auto stripped_pathname = strip_res.unwrap();
+    auto stripped_pathname = strip_res.assume_ok();
 
     auto clean_res = cli::clangPathFromName(stripped_pathname);
     if (clean_res.is_err()) {
         return Err(1);
     }
 
-    auto clean_pathname = clean_res.unwrap();
+    auto clean_pathname = clean_res.assume_ok();
 
     auto exe_basename = llvm::StringRef(llvm::sys::path::stem(clean_pathname));
     if (exe_basename.equals_insensitive("cl")) {
@@ -93,10 +92,10 @@ int32_t main(int argc, const char **argv) {
 
     auto diag_config_res = build_diag(args_vec);
     if (diag_config_res.is_err()) {
-        return diag_config_res.unwrap_err();
+        return diag_config_res.assume_err();
     }
 
-    auto [diag_opts, diag, clean_path] = diag_config_res.unwrap();
+    auto [diag_opts, diag, clean_path] = diag_config_res.assume_ok();
     auto driver =
         clang::driver::Driver(clean_path, llvm::sys::getDefaultTargetTriple(), *diag);
     auto target_and_mode =
@@ -126,7 +125,7 @@ int32_t main(int argc, const char **argv) {
         }
 
         llvm::outs() << "TEST, ABOUT TO PRINT KEY, VALUE FOR REWRITTEN:\n";
-        auto rewritten = action_exec_res.unwrap();
+        auto rewritten = action_exec_res.assume_ok();
         for (const auto &[key, value] : rewritten) {
             llvm::outs() << key << ": " << value << "\n";
         }

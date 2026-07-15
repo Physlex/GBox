@@ -2,49 +2,39 @@
  *  @brief This file implements a simple runtime loop using the gbox core lib.
  */
 
-#include <gbox/runtime/scheduler.h>
-#include <gbox/runtime/tasks.h>
-#include <gbox/runtime/utility/errors.h>
 #include <stdint.h>
 #include <stdio.h>
 
-struct user_main_task_args {
-    int32_t argc;
-    char **argv;
-};
+#include <gbox/core/cell.hpp>
+#include <gbox/core/result.hpp>
+#include <gbox/runtime/executor.hpp>
+
+using namespace gbox;
 
 /// This should really be something that can be automatically "reinterpreted"
 /// and type-specified
 [[clang::annotate("task")]]
-static inline int32_t hello_msg(void *low_level_msg) {
-    if (!low_level_msg) {
-        return -EC_REQUIRES;
-    }
-
-    printf("Hello, %s!\n", (const char *)low_level_msg);
-
-    return EC_SUCCESS;
+static inline void hello_msg(const char *msg) {
+    printf("Hello, world! Message: %s\n", msg);
+    return;
 }
 
 /// Meanwhile, this will be the original "main", which is generated via
 /// attribute
 [[clang::annotate("executor")]]
-int32_t user_main(void *args) {
-    struct user_main_task_args args_actual = *(struct user_main_task_args *)args;
-
-    task_t task_0 = simple_task_create(hello_msg, "Hello");
-    task_t task_1 = simple_task_create(hello_msg, "World");
-
+void user_main(executor::ExecutionChannel &&scheduler) {
     // That way task scheduling such as this is relatively simple.
 
-    if (sched_task(&task_0) < 0) {
+    const auto task_1_res = scheduler.run_once([&]() { hello_msg("420"); });
+    if (task_1_res.is_err()) {
         printf("ERROR: Task 0 failed to enqueue\n");
-        return 1;
+        return;
     }
 
-    if (sched_task(&task_1) < 0) {
+    const auto task_2_res = scheduler.run_once([&]() { hello_msg("67"); });
+    if (task_2_res.is_err()) {
         printf("ERROR: Task 1 failed to enqueue\n");
-        return 1;
+        return;
     }
 
     // And we don't really need to run any task, the one's queued just
@@ -52,20 +42,18 @@ int32_t user_main(void *args) {
 
     // TODO: Currently doesn't do anything except yield to the scheduler.
     //       Honestly, the runtime is currently: "async without await"
-    return 0;
+    return;
 }
+
+static cell::StaticCell<executor::ExecutionPool> POOL_CELL();
 
 /// In theory, this will eventually be generated boilerplate for the "true"
 /// entrypoint
 int32_t main(int32_t argc, char **argv) {
-    uint32_t maximum_num_tasks = 100;
-    sched_init(maximum_num_tasks);
+    constexpr std::size_t MAX_TASKS = 1024;
+    auto pool = POOL_CELL.init(std::move(executor::ExecutionPool<MAX_TASKS>()));
+    auto scheduler = pool.generate_handle();
+    scheduler.schedule([&scheduler]() { user_main(scheduler); });
 
-    struct user_main_task_args user_main_args = {.argc = argc, .argv = argv};
-    task_t user_main_task = simple_task_create(user_main, (void *)&user_main_args);
-    sched_task(&user_main_task);
-
-    // Ideally, we should be able to yield tasks early and return their result,
-    // instead of ignore all return types.
-    return -sched_run();
+    return pool.drain();
 }

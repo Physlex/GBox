@@ -13,8 +13,7 @@
 #include "llvm/Support/VirtualFileSystem.h"
 
 using namespace gbox::action;
-using namespace gbox::result;
-
+using namespace result;
 Action::Action(clang::DiagnosticsEngine &dengine)
     : dengine_(dengine), action_(plugins::ProcMacroAction()) {}
 

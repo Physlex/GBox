@@ -11,8 +11,7 @@
 
 #include "gbox/core/result.hpp"
 
-using namespace gbox::result;
-
+using namespace result;
 namespace gbclang::cli {
 
 /// Various error defintions used in the CLI interface.

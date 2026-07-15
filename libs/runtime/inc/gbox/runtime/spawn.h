@@ -1,4 +1,0 @@
-#ifndef GBOX_RUNTIME_SPAWN_H_
-#define GBOX_RUNTIME_SPAWN_H_
-
-#endif  // GBOX_RUNTIME_SPAWN_H_

@@ -53,6 +53,21 @@
             Add:
               - -I${gbpkgs.gbox.toolchain.llvm.llvm.dev}/include
               - -I${gbpkgs.gbox.toolchain.llvm.libclang.dev}/include
+
+          Diagnostics:
+            ClangTidy:
+              Add:
+                - bugprone-*
+                - performance-*
+                - modernize-*
+                - readability-*
+                - cppcoreguidelines-*
+                - clang-analyzer-*
+              Remove:
+                - modernize-use-trailing-return-type
+              CheckOptions:
+              readability-identifier-length.MinimumVariableNameLength: 2
+
           Index:
             Background: Build
           EOF
