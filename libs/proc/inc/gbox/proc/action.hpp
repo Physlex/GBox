@@ -21,7 +21,7 @@ enum class ErrorKind { InvalidArgs, Action };
 
 /// Adaptor result alias. Uses the gbox::adaptor::ErrorKind as it's errorfull value.
 template <typename T>
-using Result = gbox::result::Result<T, ErrorKind>;
+using Result = result::Result<T, ErrorKind>;
 
 /// This class implements the action adaptor type
 ///
