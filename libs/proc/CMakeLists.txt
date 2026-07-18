@@ -1,5 +1,7 @@
 # Set up LLVM and clang dependencies...
 
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
+
 set(LLVM_LINK_COMPONENTS Support)
 
 find_package(LLVM REQUIRED CONFIG)

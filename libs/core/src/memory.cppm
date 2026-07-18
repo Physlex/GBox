@@ -1,5 +1,4 @@
-#ifndef GBOX_CORE_MEMORY_HPP_
-#define GBOX_CORE_MEMORY_HPP_
+export module gbox.core:memory;
 
 //! This module implements a memory constraining types for classes and structs
 //!
@@ -13,7 +12,7 @@
 //!   * Pinned -- Deletes all move, assignment, and copy operations. Forces the memory
 //!     to be defineed in exactly one spot, or otherwise referenced instead.
 
-namespace memory {
+export namespace memory {
 
 class MoveOnly {
     MoveOnly() = default;
@@ -33,5 +32,3 @@ class Pinned {
 };
 
 }  // namespace memory
-
-#endif  // GBOX_CORE_MEMORY_HPP_

@@ -18,8 +18,6 @@
 #include <memory>
 #include <unordered_map>
 
-#include "clang/Basic/SourceLocation.h"
-
 namespace gbox::plugins {
 
 /// Boilerplate to handle clang

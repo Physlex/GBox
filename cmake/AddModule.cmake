@@ -17,11 +17,18 @@ macro(gbox_module MODULE_NAME MODULE_PATH)
   file(
     GLOB_RECURSE
     "${MODULE_NAME}_SRC"
-    "${${MODULE_NAME}_SRC_PATH}/*.cpp" "${${MODULE_NAME}_SRC_PATH}/*.c"
+    "${${MODULE_NAME}_SRC_PATH}/*.c" "${${MODULE_NAME}_SRC_PATH}/*.cpp"
+  )
+
+  file(
+    GLOB_RECURSE
+    "${MODULE_NAME}_MODULE_SRC"
+    "${${MODULE_NAME}_SRC_PATH}/*.cppm"
   )
 
   list(REMOVE_ITEM "${MODULE_NAME}_SRC" "${${MODULE_NAME}_SRC_PATH}/main.cpp")
   list(REMOVE_ITEM "${MODULE_NAME}_SRC" "${${MODULE_NAME}_SRC_PATH}/main.c")
+  list(REMOVE_ITEM "${MODULE_NAME}_MODULE_SRC" "${${MODULE_NAME}_SRC_PATH}/main.cppm")
 
   add_subdirectory("${${MODULE_NAME}_PATH}")
   if(EXISTS "${${MODULE_NAME}_TEST_PATH}/CMakeLists.txt")

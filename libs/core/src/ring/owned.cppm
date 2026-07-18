@@ -1,18 +1,25 @@
-#ifndef GBOX_CORE_RING_OWNED_HPP_
-#define GBOX_CORE_RING_OWNED_HPP_
+module;
 
 #include <array>
+#include <cstddef>
 #include <ranges>
 
-#include "gbox/core/memory.hpp"
-#include "gbox/core/ring/mod.hpp"
+export module gbox.core:ring.owned;
 
-namespace owned {
+import :memory;
+import :result;
+import :ring.mod;
+
+export namespace owned {
+
+using result::Err;
+using result::Ok;
+
 /// Partial specialization of the RingStorage type into a capacity holding type
 template <typename T, std::size_t C>
-class OwnedStorage : public memory::MoveOnly, public super::Ring<OwnedStorage<T, C>, T> {
+class OwnedStorage : public memory::MoveOnly, public mod::Ring<OwnedStorage<T, C>, T> {
     static_assert(C > 0, "Capacity must be greater than zero!");
-    using Base = super::Ring<OwnedStorage<T, C>, T>;
+    using Base = mod::Ring<OwnedStorage<T, C>, T>;
 
   public:
     /// Constructs a ringbuffer with capacity C, and count N, where N = list.size()
@@ -35,10 +42,10 @@ class OwnedStorage : public memory::MoveOnly, public super::Ring<OwnedStorage<T,
         }
     }
 
-    super::Result<T> pop_impl() {
+    mod::Result<T> pop_impl() {
         [[unlikely]]
         if (this->is_empty()) {
-            return result::Err(super::Error::Dequeue);
+            return Err(mod::Error::Dequeue);
         }
 
         auto res = this->storage_[this->reader_];
@@ -48,17 +55,17 @@ class OwnedStorage : public memory::MoveOnly, public super::Ring<OwnedStorage<T,
         return Ok(res);
     }
 
-    super::Result<void> push_impl(const T value) {
+    mod::Result<void> push_impl(const T value) {
         [[unlikely]]
         if (!this->is_empty()) {
-            return result::Err(super::Error::Enqueue);
+            return Err(mod::Error::Enqueue);
         }
 
         this->storage_[this->writer_] = value;
         this->writer_ = (this->writer_ + 1) % C;
         ++this->count_;
 
-        return result::Ok();
+        return Ok();
     }
 
   protected:
@@ -66,5 +73,3 @@ class OwnedStorage : public memory::MoveOnly, public super::Ring<OwnedStorage<T,
 };
 
 }  // namespace owned
-
-#endif  // GBOX_CORE_RING_OWNED_HPP_

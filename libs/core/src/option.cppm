@@ -1,12 +1,14 @@
-#ifndef GBOX_CORE_OPTION_HPP_
-#define GBOX_CORE_OPTION_HPP_
+module;
+
+#include <cassert>
+#include <variant>
+
+export module gbox.core:option;
 
 //! This module implements option typing to promote null-and-missing errors to the
 //! compiler
 
-#include <variant>
-
-namespace option {
+export namespace option {
 
 /// Empty type representing a lack of a value
 struct None {};
@@ -67,5 +69,3 @@ class Option {
 };
 
 }  // namespace option
-
-#endif  // GBOX_CORE_OPTION_HPP_

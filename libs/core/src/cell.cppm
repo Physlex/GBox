@@ -1,5 +1,8 @@
-#ifndef GBOX_CORE_CELL_HPP_
-#define GBOX_CORE_CELL_HPP_
+module;
+
+#include <atomic>
+
+export module gbox.core:cell;
 
 //! This module defines a `Cell` type, which handles operating on memory in static space.
 //!
@@ -14,17 +17,18 @@
 //! They are technically slower to use then raw memory assignments, but that is exactly
 //! the tradeoff we accept for the purposes of safe and robust software.
 
-#include <atomic>
+import :memory;
+import :option;
+import :result;
 
-#include "gbox/core/memory.hpp"
-#include "gbox/core/option.hpp"
-#include "gbox/core/result.hpp"
+export namespace cell {
 
-namespace gbox::cell {
+using option::None;
+using option::Option;
+using option::Some;
 
-using gbox::option::None;
-using gbox::option::Option;
-using gbox::option::Some;
+using result::Err;
+using result::Ok;
 
 /// Error definitions for the cell module
 enum class Error {
@@ -41,7 +45,7 @@ using Result = result::Result<T, Error>;
 
 /// Defines a standard way of operating in static memory
 template <typename T>
-class StaticCell : public gbox::memory::Pinned {
+class StaticCell : public memory::Pinned {
   public:
     /// Constructs an unlocked `StaticCell`
     StaticCell() : inner_(None()) {};
@@ -58,7 +62,7 @@ class StaticCell : public gbox::memory::Pinned {
     inline Result<T &> init(T &&value) {
         [[unlikely]]
         if (this->inner_.is_some()) {
-            return result::Err(Error::Locked);
+            return Err(Error::Locked);
         }
 
         this->inner_ = Some(std::move(value));
@@ -76,6 +80,4 @@ class StaticCell : public gbox::memory::Pinned {
     std::atomic<Option<T &&>> inner_;
 };
 
-}  // namespace gbox::cell
-
-#endif  // GBOX_CORE_CELL_HPP_
+}  // namespace cell

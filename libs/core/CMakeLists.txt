@@ -1,2 +1,7 @@
-add_library("${GBOX_CORE_NAME}" "${GBOX_CORE_SRC}")
+add_library("${GBOX_CORE_NAME}")
+target_sources(
+    "${GBOX_CORE_NAME}"
+    PRIVATE ${GBOX_CORE_SRC}
+    PUBLIC FILE_SET CXX_MODULES FILES ${GBOX_CORE_MODULE_SRC}
+)
 target_include_directories("${GBOX_CORE_NAME}" PUBLIC ${GBOX_CORE_INC_PATH})
