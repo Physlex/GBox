@@ -11,6 +11,9 @@ import :ring.viewed;
 export namespace ring {
     using Error = mod::Error;
 
+    template<typename T>
+    using Result = mod::Result<T>;
+
     template<typename T, std::size_t C>
     using RingBuffer = owned::OwnedStorage<T, C>;
 

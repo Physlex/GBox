@@ -4,16 +4,10 @@
 
 import gbox.core;
 
-/// The ring error enum is reachable through the module and its variants are distinct.
 TEST(ringErrorVariants, ringTests) {
     ASSERT_NE(ring::Error::Enqueue, ring::Error::Dequeue);
 }
 
-#if 0
-// FIXME(bug): OwnedStorage cannot be instantiated. Its only constructor asserts
-// `static_assert(list.size() > C, ...)` — the logic is inverted and list.size() is not a
-// constant expression — and it derives from memory::MoveOnly, whose default constructor
-// is private. Re-enable once OwnedStorage is constructible.
 TEST(ringOwnedPushPop, ringTests) {
     ring::RingBuffer<int, 4> buffer = {};
 
@@ -24,4 +18,15 @@ TEST(ringOwnedPushPop, ringTests) {
     ASSERT_TRUE(pop.is_ok());
     ASSERT_EQ(1, pop.assume_ok());
 }
-#endif
+
+TEST(ringOwnedBounds, ringTests) {
+    ring::RingBuffer<int, 2> buffer = {};
+
+    ASSERT_TRUE(buffer.push(1).is_ok());
+    ASSERT_TRUE(buffer.push(2).is_ok());
+    ASSERT_TRUE(buffer.push(3).is_err());
+
+    ASSERT_TRUE(buffer.pop().is_ok());
+    ASSERT_TRUE(buffer.pop().is_ok());
+    ASSERT_TRUE(buffer.pop().is_err());
+}

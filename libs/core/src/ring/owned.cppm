@@ -2,7 +2,7 @@ module;
 
 #include <array>
 #include <cstddef>
-#include <ranges>
+#include <type_traits>
 
 export module gbox.core:ring.owned;
 
@@ -22,24 +22,33 @@ class OwnedStorage : public memory::MoveOnly, public mod::Ring<OwnedStorage<T, C
     using Base = mod::Ring<OwnedStorage<T, C>, T>;
 
   public:
-    /// Constructs a ringbuffer with capacity C, and count N, where N = list.size()
+    /// Constructs an empty ringbuffer with capacity C and count 0
+    OwnedStorage() : Base() {}
+
+    /// Constructs a ringbuffer with capacity C, and count N, of type T
     ///
     /// Each element of the initializer list is propagated to the storage of the
     /// ringbuffer.
-    ///
-    /// ## Compilation Error
-    /// Fails to compile if the capacity of the ringbuffer is not equal to the
-    /// capacity of the internal storage type.
-    OwnedStorage(std::initializer_list<T> list) : Base() {
+    /// 
+    /// ## Compilation Errors
+    /// If the number of arguments supplied in the initializer list is greater then the
+    /// capacity of the buffer, or the type assigned to one of the initializer values
+    /// doesn't implicitly convert into the underlying Ring type, then we fail with
+    /// a compilation error.
+    template <typename... Args>
+        requires(std::is_convertible_v<Args, T> && ...)
+    OwnedStorage(Args... args) : Base() {
         static_assert(
-            list.size() > C,
+            sizeof...(Args) <= C,
             "Ringbuffer cannot be populated with an initializer list of capacity greater "
             "than the buffer"
         );
 
-        for (const auto [index, value] : std::views::enumerate(list)) {
-            this->storage_[static_cast<std::size_t>(index)] = value;
-        }
+        std::size_t index = 0;
+        ((this->storage_[index++] = static_cast<T>(args)), ...);
+
+        this->count_ = sizeof...(Args);
+        this->writer_ = sizeof...(Args) % C;
     }
 
     mod::Result<T> pop_impl() {
@@ -57,7 +66,7 @@ class OwnedStorage : public memory::MoveOnly, public mod::Ring<OwnedStorage<T, C
 
     mod::Result<void> push_impl(const T value) {
         [[unlikely]]
-        if (!this->is_empty()) {
+        if (this->count_ == C) {
             return Err(mod::Error::Enqueue);
         }
 

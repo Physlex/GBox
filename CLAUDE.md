@@ -11,39 +11,6 @@ GBox (GraniteBox) is a general embedded systems development toolkit built in C/C
 
 The long-term direction is toward an embedded systems framework, but in practice it is a personal monorepo of reusable libraries for C/C++ projects.
 
-## Build
-
-Requires clang/clang++ as compilers (enforced by the toolchain file).
-CMake 3.28+ and Ninja are required.
-Dependencies (LLVM 21+, GTest) are best managed via the Nix dev shell.
-
-```bash
-# Enter the Nix dev environment (recommended)
-nix develop
-
-# configure command is provided when inside the nix dev shell
-configure
-
-# Build alias for various development tooling
-make build          # alias for: ninja -C build
-make clean          # delete build/
-make format         # run clang-format -i on all source files
-```
-
-Output artifacts land in `build/bin/` (executables, test binaries) and `build/lib/` (static libraries).
-
-## Testing
-
-Tests use Google Test. Each library's `test/` directory is auto-discovered by CMake and compiled into `test-<filename>` binaries.
-
-```bash
-ctest --test-dir build        # run all tests
-ctest --test-dir build -V     # verbose output
-ctest --test-dir build -R core  # run tests matching a pattern
-```
-
-To run a single test binary directly: `./build/bin/test-result`.
-
 ## Architecture
 
 The repo is split into `libs/` (hardware-agnostic libraries) and `apps/` (tools and compiler driver wrappers run by a developer). Hardware-specific libraries do not yet have a designated location in the tree.

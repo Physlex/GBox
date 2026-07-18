@@ -3,6 +3,7 @@
 
 //! This module implements result-style error propagation semantics for C++.
 
+#include <cassert>
 #include <utility>
 #include <variant>
 
@@ -77,7 +78,7 @@ class Result {
     template <typename Fn>
     auto map(Fn &&f) -> Result<decltype(f(std::declval<T>())), E> {
         if (this->is_err()) {
-            return std::get<E>(this->inner_);
+            return Err(std::get<E>(this->inner_));
         }
 
         return Ok(f(std::get<T>(this->inner_)));
@@ -100,8 +101,14 @@ class Result {
     /// valid
     [[nodiscard]]
     inline E assume_err() {
-        assert(std::holds_alternative<T>(this->inner_));
+        assert(std::holds_alternative<E>(this->inner_));
         return std::get<E>(this->inner_);
+    }
+
+    /// Returns a reference to the underlying variant storage
+    [[nodiscard]]
+    inline ResultInner<T, E> &inner() {
+        return this->inner_;
     }
 
     /// Returns true if the result holds an erroneous value

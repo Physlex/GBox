@@ -12,11 +12,11 @@ export namespace mod {
     enum class Error {
         /// Failed to push a value into the ring buffer
         Enqueue,
-    
+
         /// Failed to dequeue a value from the ring buffer
         Dequeue
     };
-    
+
     /// Result alias for the gbox ring container type
     template <typename T>
     using Result = result::Result<T, Error>;
@@ -33,7 +33,7 @@ export namespace mod {
         /// ## Error
         /// Returns an Enqueue error on failure to push
         inline Result<void> push(const T value) {
-            return static_cast<Derived *>(this)->push(std::move(value));
+            return static_cast<Derived *>(this)->push_impl(std::move(value));
         }
     
         /// Return the last-recent element pushed onto the ring buffer
@@ -46,7 +46,7 @@ export namespace mod {
         inline bool is_empty() const { return this->count_ == 0; }
     
         /// The current count of elements enqueued within the ringbuffer
-        std::size_t count() const;
+        inline std::size_t count() const { return this->count_; }
     
       protected:
         std::size_t reader_ = 0;

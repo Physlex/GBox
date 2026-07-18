@@ -15,20 +15,21 @@ export module gbox.core:memory;
 export namespace memory {
 
 class MoveOnly {
+  protected:
     MoveOnly() = default;
-    MoveOnly(const MoveOnly &) = delete;
-    MoveOnly &operator=(const MoveOnly &) = delete;
+    ~MoveOnly() = default;
     MoveOnly(MoveOnly &&) noexcept = default;
     MoveOnly &operator=(MoveOnly &&) noexcept = default;
+    MoveOnly(const MoveOnly &) = delete;
+    MoveOnly &operator=(const MoveOnly &) = delete;
 };
 
 class Pinned {
+  protected:
     Pinned() = default;
+    ~Pinned() = default;
     Pinned(const Pinned &) = delete;
     Pinned &operator=(const Pinned &) = delete;
-
-  protected:
-    ~Pinned() = default;
 };
 
 }  // namespace memory
