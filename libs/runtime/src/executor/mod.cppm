@@ -1,14 +1,8 @@
-#ifndef GBOX_RUNTIME_EXECUTOR_MOD_HPP_
-#define GBOX_RUNTIME_EXECUTOR_MOD_HPP_
+module;
 
-//! This file defines the public API for the executor module, including channels, pools,
-//! and the various utilities related.
+export module gbox.runtime:executor.mod;
 
-#include "gbox/core/result.hpp"
-#include "gbox/core/types.hpp"
-
-namespace super {
-
+export namespace mod {
 /// Error definitions for the executor module
 enum class Error {
     /// Failed to add new memory to the execution pool due to lack of space
@@ -33,7 +27,4 @@ struct Scheduler {
         return static_cast<Derived *>(this)->schedule_impl(task);
     }
 };
-
-}  // namespace super
-
-#endif  // GBOX_RUNTIME_EXECUTOR_MOD_HPP_
+}  // namespace mod

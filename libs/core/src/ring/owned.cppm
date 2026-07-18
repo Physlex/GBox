@@ -29,7 +29,7 @@ class OwnedStorage : public memory::MoveOnly, public mod::Ring<OwnedStorage<T, C
     ///
     /// Each element of the initializer list is propagated to the storage of the
     /// ringbuffer.
-    /// 
+    ///
     /// ## Compilation Errors
     /// If the number of arguments supplied in the initializer list is greater then the
     /// capacity of the buffer, or the type assigned to one of the initializer values

@@ -1,10 +1,11 @@
-#ifndef GBOX_RUNTIME_EXECUTOR_CHANNEL_HPP_
-#define GBOX_RUNTIME_EXECUTOR_CHANNEL_HPP_
+module;
 
 //! This module defines the various event operations and structures for basic asynchronous
 //! event generation-and-response.
 
-#include "gbox/runtime/executor/mod.hpp"
+export module gbox.runtime:executor.channel;
+
+import :executor.mod;
 
 namespace channel {
 
@@ -33,5 +34,3 @@ class ExecutionChannel : public super::Scheduler<ExecutionChannel<Sig>, Sig> {
 };
 
 }  // namespace channel
-
-#endif  // GBOX_RUNTIME_EXECUTOR_CHANNEL_HPP_

@@ -1,4 +1,11 @@
-add_library(${GBOX_RUNTIME_NAME} STATIC ${GBOX_RUNTIME_SRC})
+add_library(${GBOX_RUNTIME_NAME})
+
+target_sources(
+  "${GBOX_RUNTIME_NAME}"
+  PRIVATE ${GBOX_RUNTIME_SRC}
+  PUBLIC FILE_SET CXX_MODULES FILES ${GBOX_RUNTIME_MODULE_SRC}
+)
+
 target_link_libraries(${GBOX_RUNTIME_NAME} PRIVATE ${GBOX_CORE_NAME})
 
 target_include_directories(
