@@ -43,4 +43,4 @@ gbox_module(GBOX_RUNTIME "${PROJECT_SOURCE_DIR}/libs/runtime")
 # Workspace module applications
 
 gbox_module(GBCLANG "${PROJECT_SOURCE_DIR}/apps/gbclang")
-gbox_module(Trepidation "${PROJECT_SOURCE_DIR}/apps/trepidation")
+gbox_module(TREPIDATION "${PROJECT_SOURCE_DIR}/apps/trepidation")

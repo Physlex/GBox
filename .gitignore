@@ -2,9 +2,11 @@
 .zed
 .vscode
 
+# AI
+.claude/
+
 # C/C++ build system
 build/
-.vscode/
 
 # Documentation
 docs/*.css

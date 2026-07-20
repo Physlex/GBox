@@ -6,7 +6,7 @@ pkgs.stdenv.mkDerivation {
   src = ../.;
 
   nativeBuildInputs = toolchain.nativeBuildInputs;
-  buildInputs = toolchain.buildInputs;
+  buildInputs = toolchain.buildInputs ++ [ pkgs.sdl3 ];
   configurePhase = toolchain.configurePhase;
   buildPhase = "ninja -C build";
 

@@ -2,9 +2,10 @@
 #
 # This file declares gbox modules as library targets.
 #
-# Every dependency in the workspace is a module named `gbox::<name>`, whether it is built in
-# this tree or comes from a third-party package. `gbox_library(... DEPENDS ...)` therefore
-# takes a single uniform list and does not distinguish between the two.
+# Every dependency in the workspace is a module: one built in this tree is `gbox::<name>`, and
+# one brought in from a third-party package is `import::<name>`. `gbox_library(... DEPENDS ...)`
+# takes a single uniform list of bare names and resolves each against both namespaces, so call
+# sites do not distinguish between the two.
 #
 # `gbox_module()` (AddModule.cmake) discovers a directory and globs its sources; the functions
 # here turn what it discovered into targets, and must be called from the module's own
@@ -12,26 +13,36 @@
 
 # Declares a third-party package as a gbox module.
 #
-#   PACKAGE  <pkg>      configuration package to locate, i.e. find_package(<pkg> REQUIRED CONFIG)
-#   LINK     <target>.. targets the package provides that dependents must link
-#   INCLUDES <dir>..    additional include directories
+#   PACKAGE    <pkg>      configuration package to locate, i.e. find_package(<pkg> REQUIRED CONFIG)
+#   COMPONENTS <comp>..   components to request from PACKAGE
+#   LINK       <target>.. targets the package provides that dependents must link
+#   INCLUDES   <dir>..    additional include directories
 #
 # The include directories and compile definitions a package advertises through the conventional
 # <PKG>_INCLUDE_DIRS and <PKG>_DEFINITIONS variables are picked up automatically, so a package
 # following that convention needs only its PACKAGE and LINK entries.
 function(gbox_import IMPORT_NAME)
-    cmake_parse_arguments(GBIMPORT "" "PACKAGE" "LINK;INCLUDES" ${ARGN})
+    cmake_parse_arguments(GBIMPORT "" "PACKAGE" "LINK;INCLUDES;COMPONENTS" ${ARGN})
 
-    set(TARGET "gbox_${IMPORT_NAME}")
+    set(TARGET "import_${IMPORT_NAME}")
     set(INCLUDES ${GBIMPORT_INCLUDES})
     set(DEFINITIONS "")
+
+    if(GBIMPORT_COMPONENTS AND NOT DEFINED GBIMPORT_PACKAGE)
+        message(FATAL_ERROR "gbox_import(${IMPORT_NAME}): COMPONENTS requires PACKAGE.")
+    endif()
 
     if(DEFINED GBIMPORT_PACKAGE)
         # Imported targets are scoped to the directory that found them, which would put them
         # out of reach of sibling directories -- test directories in particular, since
         # gbox_module() adds those alongside the module rather than beneath it.
         set(CMAKE_FIND_PACKAGE_TARGETS_GLOBAL TRUE)
-        find_package("${GBIMPORT_PACKAGE}" REQUIRED CONFIG)
+
+        set(FIND_ARGS "${GBIMPORT_PACKAGE}" REQUIRED CONFIG)
+        if(GBIMPORT_COMPONENTS)
+            list(APPEND FIND_ARGS COMPONENTS ${GBIMPORT_COMPONENTS})
+        endif()
+        find_package(${FIND_ARGS})
 
         # A package exports these under its own name or under an upper-cased one; LLVM uses the
         # former and Clang the latter, so accept whichever is populated.
@@ -46,7 +57,7 @@ function(gbox_import IMPORT_NAME)
     endif()
 
     add_library("${TARGET}" INTERFACE)
-    add_library("gbox::${IMPORT_NAME}" ALIAS "${TARGET}")
+    add_library("import::${IMPORT_NAME}" ALIAS "${TARGET}")
 
     target_link_libraries("${TARGET}" INTERFACE ${GBIMPORT_LINK})
     target_compile_definitions("${TARGET}" INTERFACE ${DEFINITIONS})
@@ -56,6 +67,9 @@ function(gbox_import IMPORT_NAME)
 
     set_property(GLOBAL APPEND PROPERTY GBOX_IMPORTS "${IMPORT_NAME}")
     set_property(GLOBAL PROPERTY "GBOX_IMPORT_${IMPORT_NAME}_PACKAGE" "${GBIMPORT_PACKAGE}")
+    set_property(
+      GLOBAL PROPERTY "GBOX_IMPORT_${IMPORT_NAME}_COMPONENTS" "${GBIMPORT_COMPONENTS}"
+    )
 endfunction()
 
 # Declares an in-tree module as a gbox library.
@@ -113,7 +127,11 @@ function(gbox_library LIB_NAME)
     target_include_directories("${TARGET}" PUBLIC ${GBLIB_INCLUDES})
 
     foreach(DEPENDENCY IN LISTS GBLIB_DEPENDS)
-        if(NOT TARGET "gbox::${DEPENDENCY}")
+        if(TARGET "gbox::${DEPENDENCY}")
+            set(RESOLVED "gbox::${DEPENDENCY}")
+        elseif(TARGET "import::${DEPENDENCY}")
+            set(RESOLVED "import::${DEPENDENCY}")
+        else()
             message(
               FATAL_ERROR
               "gbox_library(${LIB_NAME}): no module named `${DEPENDENCY}`. Declare it with "
@@ -123,7 +141,7 @@ function(gbox_library LIB_NAME)
 
         # PUBLIC: a module interface unit that re-exports a dependency's declarations makes that
         # dependency part of this library's own interface.
-        target_link_libraries("${TARGET}" PUBLIC "gbox::${DEPENDENCY}")
+        target_link_libraries("${TARGET}" PUBLIC "${RESOLVED}")
     endforeach()
 
     set_property(GLOBAL APPEND PROPERTY GBOX_LIBRARIES "${TARGET}")
