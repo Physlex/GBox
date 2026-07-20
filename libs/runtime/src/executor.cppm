@@ -2,13 +2,18 @@ module;
 
 export module gbox.runtime:executor;
 
-import :executor.mod;
+import :executor.policy;
 import :executor.pool;
 import :executor.channel;
 
 export namespace executor {
-using Error = mod::Error;
+
+using Error = policy::Error;
 
 template <typename T>
-using Result = mod::Result<T>;
+using Result = policy::Result<T>;
+
+template <typename Sig>
+using ExecutionChannel = channel::ExecutionChannel<Sig>;
+
 }  // namespace executor

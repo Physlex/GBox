@@ -5,9 +5,9 @@ module;
 
 export module gbox.runtime:executor.channel;
 
-import :executor.mod;
+import :executor.policy;
 
-namespace channel {
+export namespace executor::channel {
 
 /// Implements a lightweight channel to the `ExecutorPool`
 ///
@@ -21,16 +21,16 @@ namespace channel {
 /// Copying the execution channel is always intended to be lightweight, and will always
 /// point to the same `ExecutionPool` regardless of how many channels live and die.
 template <typename Sig>
-class ExecutionChannel : public super::Scheduler<ExecutionChannel<Sig>, Sig> {
-    using Base = super::Scheduler<ExecutionChannel<Sig>, Sig>;
+class ExecutionChannel : public policy::Scheduler<ExecutionChannel<Sig>, Sig> {
+    using Base = policy::Scheduler<ExecutionChannel<Sig>, Sig>;
     using typename Base::Task;
 
   protected:
-    super::Result<void> schedule_impl(Task task);
+    policy::Result<void> schedule_impl(Task task);
 
   private:
     // TODO: IMPLEMENT
     // ExecutionPoolView<void()> parent_;
 };
 
-}  // namespace channel
+}  // namespace executor::channel

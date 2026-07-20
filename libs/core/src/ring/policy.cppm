@@ -3,11 +3,12 @@ module;
 #include <cstddef>
 #include <utility>
 
-export module gbox.core:ring.mod;
+export module gbox.core:ring.policy;
 
 import :result;
 
-export namespace mod {
+export namespace ring::policy {
+
 /// Error aliases for the Ring container type
 enum class Error {
     /// Failed to push a value into the ring buffer
@@ -53,4 +54,5 @@ class Ring {
     std::size_t writer_ = 0;
     std::size_t count_ = 0;
 };
-}  // namespace mod
+
+}  // namespace ring::policy

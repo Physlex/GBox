@@ -8,18 +8,18 @@ export module gbox.core:ring.owned;
 
 import :memory;
 import :result;
-import :ring.mod;
+import :ring.policy;
 
-export namespace owned {
+export namespace ring::owned {
 
 using result::Err;
 using result::Ok;
 
 /// Partial specialization of the RingStorage type into a capacity holding type
 template <typename T, std::size_t C>
-class OwnedStorage : public memory::MoveOnly, public mod::Ring<OwnedStorage<T, C>, T> {
+class OwnedStorage : public memory::MoveOnly, public policy::Ring<OwnedStorage<T, C>, T> {
     static_assert(C > 0, "Capacity must be greater than zero!");
-    using Base = mod::Ring<OwnedStorage<T, C>, T>;
+    using Base = policy::Ring<OwnedStorage<T, C>, T>;
 
   public:
     /// Constructs an empty ringbuffer with capacity C and count 0
@@ -51,10 +51,10 @@ class OwnedStorage : public memory::MoveOnly, public mod::Ring<OwnedStorage<T, C
         this->writer_ = sizeof...(Args) % C;
     }
 
-    mod::Result<T> pop_impl() {
+    policy::Result<T> pop_impl() {
         [[unlikely]]
         if (this->is_empty()) {
-            return Err(mod::Error::Dequeue);
+            return Err(policy::Error::Dequeue);
         }
 
         auto res = this->storage_[this->reader_];
@@ -64,10 +64,10 @@ class OwnedStorage : public memory::MoveOnly, public mod::Ring<OwnedStorage<T, C
         return Ok(res);
     }
 
-    mod::Result<void> push_impl(const T value) {
+    policy::Result<void> push_impl(const T value) {
         [[unlikely]]
         if (this->count_ == C) {
-            return Err(mod::Error::Enqueue);
+            return Err(policy::Error::Enqueue);
         }
 
         this->storage_[this->writer_] = value;
@@ -81,4 +81,4 @@ class OwnedStorage : public memory::MoveOnly, public mod::Ring<OwnedStorage<T, C
     std::array<T, C> storage_;
 };
 
-}  // namespace owned
+}  // namespace ring::owned

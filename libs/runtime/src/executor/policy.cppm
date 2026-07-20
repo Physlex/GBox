@@ -1,8 +1,13 @@
 module;
 
-export module gbox.runtime:executor.mod;
+#include "gbox/core/types.hpp"
 
-export namespace mod {
+export module gbox.runtime:executor.policy;
+
+import gbox.core;
+
+export namespace executor::policy {
+
 /// Error definitions for the executor module
 enum class Error {
     /// Failed to add new memory to the execution pool due to lack of space
@@ -27,4 +32,5 @@ struct Scheduler {
         return static_cast<Derived *>(this)->schedule_impl(task);
     }
 };
-}  // namespace mod
+
+}  // namespace executor::policy

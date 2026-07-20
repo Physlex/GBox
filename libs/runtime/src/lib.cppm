@@ -1,3 +1,3 @@
-export module gbox.lib;
+export module gbox.runtime;
 
 export import :executor;

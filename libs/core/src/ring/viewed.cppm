@@ -5,13 +5,13 @@ module;
 export module gbox.core:ring.viewed;
 
 import :memory;
-import :ring.mod;
+import :ring.policy;
 
-export namespace viewed {
+export namespace ring::viewed {
 
 /// Partial specialization of the RingStorage type into a slice into an existing ring
 template <typename T>
-class ViewedStorage : public memory::Pinned, public mod::Ring<ViewedStorage<T>, T> {
+class ViewedStorage : public memory::Pinned, public policy::Ring<ViewedStorage<T>, T> {
   public:
     // TODO: IMPLEMENT
 
@@ -19,4 +19,4 @@ class ViewedStorage : public memory::Pinned, public mod::Ring<ViewedStorage<T>, 
     std::slice_array<T> storage_;
 };
 
-}  // namespace viewed
+}  // namespace ring::viewed
