@@ -32,6 +32,7 @@ set(PROJECT_CONF_PATH "${PROJECT_SOURCE_DIR}/cmake")
 include(${PROJECT_CONF_PATH}/AddTests.cmake)
 include(${PROJECT_CONF_PATH}/TargetFormat.cmake)
 include(${PROJECT_CONF_PATH}/AddModule.cmake)
+include(${PROJECT_CONF_PATH}/AddLibrary.cmake)
 
 # Workspace module libraries
 
@@ -42,3 +43,4 @@ gbox_module(GBOX_RUNTIME "${PROJECT_SOURCE_DIR}/libs/runtime")
 # Workspace module applications
 
 gbox_module(GBCLANG "${PROJECT_SOURCE_DIR}/apps/gbclang")
+gbox_module(Trepidation "${PROJECT_SOURCE_DIR}/apps/trepidation")
