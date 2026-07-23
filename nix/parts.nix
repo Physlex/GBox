@@ -16,7 +16,6 @@ pkgs.stdenv.mkDerivation {
     cp -r build/lib/. $out/lib/
     cp -r libs/core/inc/. $out/include/
     cp -r libs/proc/inc/. $out/include/
-    cp -r libs/runtime/inc/. $out/include/
     cp -r cmake/. $out/share/cmake/gbox
 
     sed "s|@out@|$out|g" > $out/share/cmake/gbox/gboxConfig.cmake << 'EOF'

@@ -14,10 +14,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Project-wide dependencies
 
 if(NOT CMAKE_C_COMPILER MATCHES "clang")
-    message(
-      FATAL_ERROR
-      "clang improperly installed. Did you use `nix develop`?"
-    )
+  message(
+    FATAL_ERROR
+    "clang improperly installed. Did you use `nix develop`?"
+  )
 endif()
 
 find_package(GTest REQUIRED)
@@ -47,14 +47,14 @@ gbox_module(GBCLANG "${PROJECT_SOURCE_DIR}/apps/gbclang")
 gbox_module(TREPIDATION "${PROJECT_SOURCE_DIR}/apps/trepidation")
 
 # Build mode selection. Libraries always build; GBOX_BUILD_TEST decides whether the app
-# binaries or the tests come along, and the inactive set is dropped from the `all` target so
-# its sources are never scanned or compiled.
+# binaries or the tests come along, and the inactive set is dropped from the `all` target
+# so its sources are never scanned or compiled.
 if(GBOX_BUILD_TEST)
-    get_property(GBOX_INACTIVE_TARGETS GLOBAL PROPERTY GBOX_APPS)
+  get_property(GBOX_INACTIVE_TARGETS GLOBAL PROPERTY GBOX_APPS)
 else()
-    get_property(GBOX_INACTIVE_TARGETS GLOBAL PROPERTY GBOX_TESTS)
+  get_property(GBOX_INACTIVE_TARGETS GLOBAL PROPERTY GBOX_TESTS)
 endif()
 
 foreach(TARGET IN LISTS GBOX_INACTIVE_TARGETS)
-    set_target_properties("${TARGET}" PROPERTIES EXCLUDE_FROM_ALL ON)
+  set_target_properties("${TARGET}" PROPERTIES EXCLUDE_FROM_ALL ON)
 endforeach()

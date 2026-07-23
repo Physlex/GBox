@@ -50,12 +50,24 @@
       };
     };
 
+    # clang-scan-deps bypasses the nix clang wrapper, so the module scan can't find the
+    # stdlib. Hand it the libstdc++ + glibc dirs via the env vars it does honor. x86_64 only:
+    # applies to every clang invocation regardless of --target, so keep it off the arm cross path.
+    scanDepsExports = let
+      gccLibs = pkgs.gccForLibs;
+      cxxBase = "${gccLibs}/include/c++/${gccLibs.version}";
+      cxxCfg  = "${cxxBase}/${pkgs.stdenv.hostPlatform.config}";
+      libcInc = "${llvm.clang.libc_dev}/include";
+    in pkgs.lib.optionalString (target == "x86_64-linux") ''
+      export CPLUS_INCLUDE_PATH=${cxxBase}:${cxxCfg}:${libcInc}
+      export C_INCLUDE_PATH=${libcInc}'';
+
     exports = "${builtins.concatStringsSep "\n" [
       "export LLVM_DIR=${llvm.llvm.dev}/lib/cmake/llvm"
       "export Clang_DIR=${llvm.libclang.dev}/lib/cmake/clang"
       "export LD_LIBRARY_PATH=${pkgs.stdenv.cc.cc.lib}/lib/"
       "export LIBCLANG_PATH=${llvm.libclang.lib}/lib"
-    ]}";
+    ]}\n${scanDepsExports}";
 
     targetFlags = let
       failureMsg = "gbpkgs.toolchain: no gb toolchain exists for ${target}";

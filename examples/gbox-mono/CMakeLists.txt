@@ -17,6 +17,6 @@ endif()
 
 find_package(gbox REQUIRED)
 
-add_executable(${PROJECT_NAME} src/app-loop.c)
+add_executable(${PROJECT_NAME} src/app-loop.cpp)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE gbox::runtime gbox::core)
