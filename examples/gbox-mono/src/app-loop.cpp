@@ -9,6 +9,9 @@
 #include <gbox/core/result.hpp>
 #include <gbox/runtime/executor.hpp>
 
+import gbox.core;
+import gbox.runtime;
+
 using namespace gbox;
 
 /// This should really be something that can be automatically "reinterpreted"

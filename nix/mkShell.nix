@@ -15,11 +15,19 @@ pkgs.mkShell ((builtins.removeAttrs args [
 
     gbox-conf() {
       cmake -B build -S . -G Ninja \
-        ${builtins.concatStringsSep " " args.toolchain.targetFlags} "$@"
+        ${builtins.concatStringsSep " " args.toolchain.targetFlags} \
+        -DGBOX_BUILD_TEST=OFF "$@"
+    }
+    
+    gbox-build() {
+      gbox-conf "$@" \
+      && ninja -C build
     }
 
-    gbox-build() {
-      ninja -C build
+    gbox-test() {
+      gbox-conf -DGBOX_BUILD_TEST=ON "$@" \
+      && ninja -C build \
+      && ctest --test-dir build --output-on-failure
     }
 
     gbox-clean() {

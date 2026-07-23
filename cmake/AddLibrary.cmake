@@ -73,6 +73,26 @@ function(gbox_import IMPORT_NAME)
 endfunction()
 
 # Declares an in-tree module as a gbox library.
+# Resolves each bare module name against the `gbox::` and `import::` namespaces and links the
+# result to TARGET at the given SCOPE. Errors if a name matches neither namespace.
+function(gbox_link_dependencies TARGET SCOPE)
+    foreach(DEPENDENCY IN LISTS ARGN)
+        if(TARGET "gbox::${DEPENDENCY}")
+            set(RESOLVED "gbox::${DEPENDENCY}")
+        elseif(TARGET "import::${DEPENDENCY}")
+            set(RESOLVED "import::${DEPENDENCY}")
+        else()
+            message(
+              FATAL_ERROR
+              "gbox: no module named `${DEPENDENCY}`. Declare it with gbox_module()/"
+              "gbox_library() or gbox_import() before this call."
+            )
+        endif()
+
+        target_link_libraries("${TARGET}" ${SCOPE} "${RESOLVED}")
+    endforeach()
+endfunction()
+
 #
 #   DEPENDS    <module>..  other gbox modules, in-tree or imported, by short name
 #   INCLUDES   <dir>..     include directories in addition to the module's own inc/
@@ -126,23 +146,38 @@ function(gbox_library LIB_NAME)
 
     target_include_directories("${TARGET}" PUBLIC ${GBLIB_INCLUDES})
 
-    foreach(DEPENDENCY IN LISTS GBLIB_DEPENDS)
-        if(TARGET "gbox::${DEPENDENCY}")
-            set(RESOLVED "gbox::${DEPENDENCY}")
-        elseif(TARGET "import::${DEPENDENCY}")
-            set(RESOLVED "import::${DEPENDENCY}")
-        else()
-            message(
-              FATAL_ERROR
-              "gbox_library(${LIB_NAME}): no module named `${DEPENDENCY}`. Declare it with "
-              "gbox_module()/gbox_library() or gbox_import() before this call."
-            )
-        endif()
-
-        # PUBLIC: a module interface unit that re-exports a dependency's declarations makes that
-        # dependency part of this library's own interface.
-        target_link_libraries("${TARGET}" PUBLIC "${RESOLVED}")
-    endforeach()
+    # PUBLIC: a module interface unit that re-exports a dependency's declarations makes that
+    # dependency part of this library's own interface.
+    gbox_link_dependencies("${TARGET}" PUBLIC ${GBLIB_DEPENDS})
 
     set_property(GLOBAL APPEND PROPERTY GBOX_LIBRARIES "${TARGET}")
+endfunction()
+
+# Declares an in-tree module as a gbox application executable. The module's `src/main.cpp` is
+# the entry point; the rest of its sources (which gbox_module() already strips of main.*) come
+# along so an app may keep private helpers beside main.
+#
+#   DEPENDS    <module>..  gbox modules, in-tree or imported, by short name
+#   INCLUDES   <dir>..     include directories in addition to the module's own inc/
+#   NO_MODULES             opt out of C++20 module scanning for this executable
+#
+# TODO: modules declared (gbox_import/gbox_library) in the same CMakeLists.txt as this call
+# should be linked implicitly by scope rather than repeated in DEPENDS.
+function(gbox_executable APP_NAME)
+    cmake_parse_arguments(GBAPP "NO_MODULES" "" "DEPENDS;INCLUDES" ${ARGN})
+
+    string(TOUPPER "${APP_NAME}" APP_NAME_UPPER)
+    set(MODULE "${APP_NAME_UPPER}")
+    set(TARGET "${${MODULE}_NAME}")
+
+    add_executable("${TARGET}" "${${MODULE}_SRC_PATH}/main.cpp" ${${MODULE}_SRC})
+
+    if(GBAPP_NO_MODULES)
+        set_target_properties("${TARGET}" PROPERTIES CXX_SCAN_FOR_MODULES OFF)
+    endif()
+
+    target_include_directories("${TARGET}" PRIVATE ${GBAPP_INCLUDES})
+    gbox_link_dependencies("${TARGET}" PRIVATE ${GBAPP_DEPENDS})
+
+    set_property(GLOBAL APPEND PROPERTY GBOX_APPS "${TARGET}")
 endfunction()

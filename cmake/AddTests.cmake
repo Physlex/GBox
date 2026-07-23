@@ -2,6 +2,11 @@
 #
 # This file converts a set of globbed source files into tests binaries.
 
+# Selects the build mode. OFF (default): build libraries + app binaries, tests ignored. ON:
+# build libraries + tests, app binaries ignored. The top-level CMakeLists reads this to exclude
+# the inactive set from the `all` target.
+option(GBOX_BUILD_TEST "Build unit tests instead of app binaries" OFF)
+
 function(add_tests)
     # Parse keyword arguments:
     #   SOURCES   - list of source files
@@ -19,10 +24,11 @@ function(add_tests)
     # records it as an implicit system include and strips it back out of the -I flags. But
     # clang-scan-deps (C++ module scanning) does not run through the wrapper, so it never
     # gets that implicit injection either -- a test that `import`s a module then fails to
-    # resolve <gtest/gtest.h> while being scanned. Force the dir onto the command line as a
-    # raw -isystem compile option (which CMake does not strip) so the scanner can find it.
-    # GTest is a REQUIRED package, so GTest_DIR is always set and its layout is fixed.
-    # FIXME: Move out of cmake once gbox build system has formalized method of test harness choosing
+    # resolve <gtest/gtest.h> while being scanned. Force the dir onto the command line as
+    # a raw -isystem compile option (which CMake does not strip) so the scanner can find
+    # it. GTest is a REQUIRED package, so GTest_DIR is always set and its layout is fixed.
+    # FIXME: Move out of cmake once gbox build system has formalized method of test
+    # harness choosing
     cmake_path(SET GTEST_INC_DIR NORMALIZE "${GTest_DIR}/../../../include")
 
     foreach(TEST IN LISTS ADDTEST_SOURCES)
@@ -30,6 +36,10 @@ function(add_tests)
         set(RUNTIME_NAME "test-${TEST_NAME}")
 
         add_executable(${RUNTIME_NAME} ${TEST})
+
+        set_target_properties(${RUNTIME_NAME} PROPERTIES
+            RUNTIME_OUTPUT_DIRECTORY "${GBOX_TESTS_OUTPUT_DIRECTORY}"
+        )
 
         target_include_directories(${RUNTIME_NAME} PRIVATE ${ADDTEST_INCLUDES})
         target_compile_options(${RUNTIME_NAME} PRIVATE "SHELL:-isystem ${GTEST_INC_DIR}")
@@ -39,5 +49,7 @@ function(add_tests)
         )
 
         add_test(NAME ${RUNTIME_NAME} COMMAND ${RUNTIME_NAME})
+
+        set_property(GLOBAL APPEND PROPERTY GBOX_TESTS "${RUNTIME_NAME}")
     endforeach()
 endfunction()
