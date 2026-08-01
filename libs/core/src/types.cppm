@@ -2,7 +2,7 @@ module;
 
 #include "gbox/core/types.hpp"
 
-export module gbox.core:types;
+export module gbox.core.types;
 
 export using ::int8_t;
 export using ::int16_t;

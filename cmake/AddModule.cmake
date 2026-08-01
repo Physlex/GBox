@@ -34,6 +34,10 @@ macro(gbox_module MODULE_NAME MODULE_PATH)
   if(EXISTS "${${MODULE_NAME}_TEST_PATH}/CMakeLists.txt")
     add_subdirectory("${${MODULE_NAME}_TEST_PATH}")
   else()
-    message(STATUS "gbox_module(${MODULE_NAME}): no test directory found at ${${MODULE_NAME}_TEST_PATH}")
+    message(
+      STATUS
+      "gbox module ${MODULE_NAME}: no test directory at ${${MODULE_NAME}_TEST_PATH}, "
+      "tests skipped."
+    )
   endif()
 endmacro()

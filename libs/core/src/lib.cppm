@@ -1,6 +1,7 @@
 export module gbox.core;
 
-export import :types;
+export import gbox.core.types;
+
 export import :result;
 export import :memory;
 export import :option;

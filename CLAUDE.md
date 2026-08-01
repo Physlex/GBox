@@ -52,3 +52,11 @@ It strips its own `gb` prefix to determine which real compiler to invoke and ext
 
 Enforced by `.clang-format`. The pre-commit hook runs `clang-format -i` automatically on staged C/C++ files.
 IDE support via `.clangd`.
+
+## Contributing Rules
+
+`CONTRIBUTING.md` is NON-OPTIONAL. Every convention it states applies to any change made in this
+repository, including changes made by an agent.
+
+Exceptions are granted by the Agentic Engineer only. When a rule appears wrong or does not cover
+the situation, ask.

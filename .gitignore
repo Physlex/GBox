@@ -5,8 +5,10 @@
 # AI
 .claude/
 
-# C/C++ build system
+# build system
 build/
+*.lock
+*.pid
 
 # Documentation
 docs/*.css
@@ -38,3 +40,6 @@ result
 # Scratchpad
 scratch.txt
 TODO.md
+
+# Logging
+*.log

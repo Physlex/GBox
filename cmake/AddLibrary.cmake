@@ -29,7 +29,11 @@ function(gbox_import IMPORT_NAME)
     set(DEFINITIONS "")
 
     if(GBIMPORT_COMPONENTS AND NOT DEFINED GBIMPORT_PACKAGE)
-        message(FATAL_ERROR "gbox_import(${IMPORT_NAME}): COMPONENTS requires PACKAGE.")
+        message(
+          FATAL_ERROR
+          "gbox import ${IMPORT_NAME}: COMPONENTS given without PACKAGE, components can only "
+          "be requested from a package."
+        )
     endif()
 
     if(DEFINED GBIMPORT_PACKAGE)
@@ -84,8 +88,8 @@ function(gbox_link_dependencies TARGET SCOPE)
         else()
             message(
               FATAL_ERROR
-              "gbox: no module named `${DEPENDENCY}`. Declare it with gbox_module()/"
-              "gbox_library() or gbox_import() before this call."
+              "gbox link ${TARGET}: no module named `${DEPENDENCY}`, declare it with "
+              "gbox_library or gbox_import before this call."
             )
         endif()
 

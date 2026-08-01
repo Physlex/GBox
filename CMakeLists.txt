@@ -16,7 +16,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 if(NOT CMAKE_C_COMPILER MATCHES "clang")
   message(
     FATAL_ERROR
-    "clang improperly installed. Did you use `nix develop`?"
+    "gbox toolchain: C compiler ${CMAKE_C_COMPILER} is not clang, "
+    "enter the dev shell with `nix develop`."
   )
 endif()
 

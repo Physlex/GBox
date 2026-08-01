@@ -66,7 +66,7 @@
               Remove:
                 - modernize-use-trailing-return-type
               CheckOptions:
-              readability-identifier-length.MinimumVariableNameLength: 2
+                readability-identifier-length.MinimumVariableNameLength: 2
 
           Index:
             Background: Build
