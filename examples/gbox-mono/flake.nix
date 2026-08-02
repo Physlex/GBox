@@ -25,12 +25,13 @@
 
           installPhase = ''
             mkdir -p $out/examples/bin
-            cp build/bin/app-loop $out/examples/bin/
+            cp build/bin/app_loop $out/examples/bin/
           '';
         };
 
         devShells.default = gbpkgs.mkShell {
           toolchain = gbpkgs.gbox.toolchain;
+          buildInputs = [ gbpkgs.gbox.modules ];
         };
       });
 }

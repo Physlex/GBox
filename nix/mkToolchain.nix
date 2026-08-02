@@ -50,17 +50,30 @@
       };
     };
 
-    # clang-scan-deps bypasses the nix clang wrapper, so the module scan can't find the
-    # stdlib. Hand it the libstdc++ + glibc dirs via the env vars it does honor. x86_64 only:
-    # applies to every clang invocation regardless of --target, so keep it off the arm cross path.
+    # clang-scan-deps bypasses the nix clang wrapper, so the module scan can find neither the
+    # stdlib nor the include directories the wrapper injects for buildInputs -- and cmake strips
+    # those same directories off the compile lines, having classified them as implicit. Hand the
+    # scanner both through the env vars it does honor. x86_64 only: applies to every clang
+    # invocation regardless of --target, so keep it off the arm cross path.
     scanDepsExports = let
       gccLibs = pkgs.gccForLibs;
       cxxBase = "${gccLibs}/include/c++/${gccLibs.version}";
       cxxCfg  = "${cxxBase}/${pkgs.stdenv.hostPlatform.config}";
       libcInc = "${llvm.clang.libc_dev}/include";
     in pkgs.lib.optionalString (target == "x86_64-linux") ''
-      export CPLUS_INCLUDE_PATH=${cxxBase}:${cxxCfg}:${libcInc}
-      export C_INCLUDE_PATH=${libcInc}'';
+      gbox_wrapper_includes() {
+        local dirs="" prev=""
+        for arg in $NIX_CFLAGS_COMPILE; do
+          case "$prev" in
+            -isystem|-idirafter|-I) dirs="$dirs:$arg" ;;
+          esac
+          prev="$arg"
+        done
+        printf '%s' "$dirs"
+      }
+
+      export CPLUS_INCLUDE_PATH=${cxxBase}:${cxxCfg}:${libcInc}$(gbox_wrapper_includes)
+      export C_INCLUDE_PATH=${libcInc}$(gbox_wrapper_includes)'';
 
     exports = "${builtins.concatStringsSep "\n" [
       "export LLVM_DIR=${llvm.llvm.dev}/lib/cmake/llvm"

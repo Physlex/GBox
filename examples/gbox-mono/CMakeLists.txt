@@ -15,8 +15,6 @@ if(
     )
 endif()
 
-find_package(gbox REQUIRED)
+find_package(gbox REQUIRED COMPONENTS runtime)
 
-add_executable(${PROJECT_NAME} src/app-loop.cpp)
-
-target_link_libraries(${PROJECT_NAME} PRIVATE gbox::runtime gbox::core)
+gbox_module(APP_LOOP "${CMAKE_CURRENT_SOURCE_DIR}/app")

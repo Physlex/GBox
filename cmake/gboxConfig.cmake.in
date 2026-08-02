@@ -1,0 +1,34 @@
+@PACKAGE_INIT@
+
+# The build system itself travels with the package, so a consumer declares its own modules the
+# same way the workspace does. TargetFormat.cmake is deliberately absent: it globs and creates a
+# `format` target on inclusion, which is the workspace's business and not a consumer's.
+include("${CMAKE_CURRENT_LIST_DIR}/AddTests.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/AddLibrary.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/AddModule.cmake")
+
+set(gbox_SUPPORTED_COMPONENTS "")
+include("${CMAKE_CURRENT_LIST_DIR}/gboxComponents.cmake")
+
+# Naming no components asks for the whole package. Naming some narrows it, which is how a
+# consumer avoids resolving packages it has no use for -- gbox::proc pulls in LLVM and Clang,
+# and a consumer that only wants the runtime should not need them installed.
+if(NOT gbox_FIND_COMPONENTS)
+    set(gbox_FIND_COMPONENTS ${gbox_SUPPORTED_COMPONENTS})
+endif()
+
+foreach(COMPONENT IN LISTS gbox_FIND_COMPONENTS)
+    if(NOT COMPONENT IN_LIST gbox_SUPPORTED_COMPONENTS)
+        set(gbox_FOUND FALSE)
+        set(
+          gbox_NOT_FOUND_MESSAGE
+          "gbox find ${COMPONENT}: no such component, this package offers "
+          "${gbox_SUPPORTED_COMPONENTS}."
+        )
+        return()
+    endif()
+
+    include("${CMAKE_CURRENT_LIST_DIR}/gbox${COMPONENT}Component.cmake")
+endforeach()
+
+check_required_components(gbox)

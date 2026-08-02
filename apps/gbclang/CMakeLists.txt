@@ -1,1 +1,3 @@
-gbox_executable(gbclang NO_MODULES DEPENDS proc INCLUDES ${GBCLANG_INC_PATH})
+gbox_binary(gbclang NO_MODULES INCLUDES ${GBCLANG_INC_PATH})
+
+gbox_dependencies(proc)

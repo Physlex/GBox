@@ -51,6 +51,7 @@ build system was doing to it as in `gbox import <library>`. No parentheses on ei
 | `module` | Module directory discovery |
 | `import` | Third-party package resolution |
 | `link` | Dependency name resolution |
+| `find` | Component resolution in a project consuming the gbox package |
 
 ### Description
 

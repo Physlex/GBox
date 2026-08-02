@@ -1,1 +1,3 @@
-gbox_library(runtime DEPENDS core)
+gbox_library(runtime)
+
+gbox_dependencies(core)
