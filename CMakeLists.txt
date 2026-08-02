@@ -33,6 +33,7 @@ set(PROJECT_CONF_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
 include(${PROJECT_CONF_PATH}/AddTests.cmake)
 include(${PROJECT_CONF_PATH}/TargetFormat.cmake)
+include(${PROJECT_CONF_PATH}/TargetTidy.cmake)
 include(${PROJECT_CONF_PATH}/AddModule.cmake)
 include(${PROJECT_CONF_PATH}/AddLibrary.cmake)
 

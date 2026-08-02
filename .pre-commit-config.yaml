@@ -7,3 +7,9 @@ repos:
       language: system
       files: '\.(cpp|hpp|cppm|c|h|cc|hh|cxx|hxx|proto|cs|cu)$'
       exclude: ^examples/stm32f446/gen/
+    - id: clang-tidy
+      name: clang-tidy
+      entry: clang-tidy -p build --quiet
+      language: system
+      files: '\.(cpp|cppm|c|cc|cxx|cu)$'
+      exclude: ^examples/stm32f446/gen/

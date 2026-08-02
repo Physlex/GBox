@@ -15,20 +15,18 @@ format:
     echo "Formatting the application..."
     nix develop --command pre-commit run --all-files
 
-compile-fw:
+build:
   stage: build
   when: always
   script: |
-      echo "Building the application using nix and bake..."
+      echo "Building gbox..."
       nix build .# --system x86_64-linux --no-link --print-build-logs
 
-compile-examples:
+build-examples:
   stage: build
   when: always
   script: |
-    echo "Building examples using nix and bake..."
-
-    echo "Building gbox-mono example on desktop..."
+    echo "Building gbox-mono example for desktop..."
     cd examples/gbox-mono && nix build .#
 
     cd ../..

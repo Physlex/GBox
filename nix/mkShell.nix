@@ -1,8 +1,9 @@
 { pkgs }: args:
 let
-  nativeBuildInputs = args.nativeBuildInputs or []
+  nativeBuildInputs =
+    args.nativeBuildInputs or []
     ++ args.toolchain.nativeBuildInputs or []
-    ++ [pkgs.watchexec];
+    ++ [pkgs.watchexec args.toolchain.llvm.clang-tools];
   buildInputs = args.buildInputs or [] ++ args.toolchain.buildInputs or [];
   shellHook = args.shellHook or "";
 in
@@ -20,7 +21,7 @@ pkgs.mkShell ((builtins.removeAttrs args [
         ${builtins.concatStringsSep " " args.toolchain.targetFlags} \
         -DGBOX_BUILD_TEST=OFF "$@"
     }
-    
+
     gbox-build() {
       gbox-conf "$@" \
       && ninja -C build

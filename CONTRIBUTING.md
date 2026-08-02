@@ -32,6 +32,11 @@ C and C++ formatting is enforced by `.clang-format`; the pre-commit hook runs
 `clang-format -i` on staged C/C++ files. IDE support comes from the nix-generated
 `.clangd`, and the nix devshell.
 
+Static analysis is enforced by the nix-generated `.clang-tidy`; the pre-commit hook runs
+`clang-tidy` on staged translation units against the configured build tree, and the `tidy`
+target runs it across the workspace. clangd reads the same file, so the editor and the hook
+report the same checks.
+
 ## CMake Diagnostics
 
 Every `message()` raised by the gbox build system follows one format, so that build output

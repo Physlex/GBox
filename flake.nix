@@ -19,7 +19,9 @@
   flake-utils.lib.eachDefaultSystem (system:
     let
       gbpkgs = import ./nix/gbpkgs.nix { inherit system nixpkgs; };
+      mkToolsConfig = import ./nix/mkToolsConfig.nix { inherit gbpkgs; };
       gbox = gbpkgs.gbox;
+
       duck = gbpkgs.rustPlatform.buildRustPackage {
         pname = "duck";
         version = "unstable";
@@ -47,31 +49,7 @@
           ++ [ gbpkgs.pre-commit gbpkgs.uv gbpkgs.gdb gbpkgs.nixd duck ];
 
         shellHook = ''
-          cat > ./.clangd <<EOF
-          CompileFlags:
-            CompilationDatabase: build
-            Add:
-              - -I${gbpkgs.gbox.toolchain.llvm.llvm.dev}/include
-              - -I${gbpkgs.gbox.toolchain.llvm.libclang.dev}/include
-
-          Diagnostics:
-            ClangTidy:
-              Add:
-                - bugprone-*
-                - performance-*
-                - modernize-*
-                - readability-*
-                - cppcoreguidelines-*
-                - clang-analyzer-*
-              Remove:
-                - modernize-use-trailing-return-type
-              CheckOptions:
-                readability-identifier-length.MinimumVariableNameLength: 2
-
-          Index:
-            Background: Build
-          EOF
-
+          ${mkToolsConfig.config}
           echo "Nix gbox-mono development environment initialized."
         '';
       };
