@@ -4,6 +4,7 @@ default:
 stages:
    - check
    - build
+   - test
 
 variables:
   NIX_CONFIG: "experimental-features = nix-command flakes"
@@ -30,3 +31,10 @@ build-examples:
     cd examples/gbox-mono && nix build .#
 
     cd ../..
+
+unit:
+  stage: test
+  script: |
+    echo "Building gbox-mono repository unit tests..."
+
+    // TODO: ACTUALLY DO UNIT TESTS IN CI

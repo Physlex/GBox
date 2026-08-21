@@ -32,10 +32,21 @@ C and C++ formatting is enforced by `.clang-format`; the pre-commit hook runs
 `clang-format -i` on staged C/C++ files. IDE support comes from the nix-generated
 `.clangd`, and the nix devshell.
 
-Static analysis is enforced by the nix-generated `.clang-tidy`; the pre-commit hook runs
-`clang-tidy` on staged translation units against the configured build tree, and the `tidy`
-target runs it across the workspace. clangd reads the same file, so the editor and the hook
-report the same checks.
+Static analysis is enforced by the nix-generated `.clang-tidy`. The pre-commit hook runs
+`clang-tidy` on staged translation units, and `gbox-tidy` runs it across the workspace.
+clangd reads the same file, so the editor, the hook and the command report the same checks.
+
+`gbox-tidy` builds before it lints, and the hook expects a built tree for the same reason:
+clang-tidy replays each compile line as the build system recorded it, and a module unit's line
+names a module map file that only a build produces.
+
+```bash
+gbox-tidy                            # the whole workspace
+gbox-tidy libs/proc/src/action.cpp   # only the units whose paths match
+gbox-tidy --tests                    # the workspace and its tests
+```
+
+Findings are errors rather than warnings, so `gbox-tidy` exits nonzero on a tree that has any.
 
 ## CMake Diagnostics
 

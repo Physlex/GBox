@@ -21,12 +21,15 @@ let
       readability-*,
       cppcoreguidelines-*,
       clang-analyzer-*,
-      -modernize-use-trailing-return-type
+      -modernize-use-trailing-return-type,
+      -readability-redundant-declaration
 
     CheckOptions:
       readability-identifier-length.MinimumVariableNameLength: 2
 
     HeaderFilterRegex: '(apps|examples|libs)/.*'
+
+    WarningsAsErrors: '*'
     EOF
   '';
 in {

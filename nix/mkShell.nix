@@ -3,7 +3,7 @@ let
   nativeBuildInputs =
     args.nativeBuildInputs or []
     ++ args.toolchain.nativeBuildInputs or []
-    ++ [pkgs.watchexec args.toolchain.llvm.clang-tools];
+    ++ [pkgs.watchexec pkgs.python3 args.toolchain.llvm.clang-tools];
   buildInputs = args.buildInputs or [] ++ args.toolchain.buildInputs or [];
   shellHook = args.shellHook or "";
 in
@@ -15,6 +15,10 @@ pkgs.mkShell ((builtins.removeAttrs args [
   shellHook = ''
     ${args.toolchain.exports}
     export PS1="(gbox:${args.toolchain.target}) $PS1"
+
+    # clang-tidy runs the frontend unwrapped, so BMIs built with the wrapper's hardening
+    # flags fail to load against it.
+    export NIX_HARDENING_ENABLE=""
 
     gbox-conf() {
       cmake -B build -S . -G Ninja \
@@ -31,6 +35,124 @@ pkgs.mkShell ((builtins.removeAttrs args [
       gbox-conf -DGBOX_BUILD_TEST=ON "$@" \
       && ninja -C build \
       && ctest --test-dir build --output-on-failure
+    }
+
+    gbox-tidy() {
+      local CONF_ARGS=() FILES=() FILTER=() MODULES=() ROOT="" MODULE_PATH="" TESTS=0
+      local REGEX_ERROR="" PATTERN="" ALTERNATION="" JOINED=""
+      local REGEX_CHECK='import re, sys
+try:
+    re.compile(sys.argv[1])
+except re.error as exc:
+    sys.exit(str(exc))'
+
+      while [ "$#" -gt 0 ]; do
+        case "$1" in
+          --tests)
+            CONF_ARGS+=(-DGBOX_BUILD_TEST=ON)
+            TESTS=1
+            ;;
+          -m)
+            if [ "$#" -lt 2 ]; then
+              echo "gbox tidy: no name given to \`-m\`, name a directory under libs/ or apps/." >&2
+              return 1
+            fi
+            shift
+
+            # A module is named by its bare directory name. Without this, any name the
+            # concatenation happens to resolve is taken -- `core/src` scopes to a
+            # subdirectory, and `.` or `..` resolve to libs itself and sweep nothing.
+            case "$1" in
+              "" | "." | ".." | */*)
+                echo "gbox module $1: not a module name, name a directory under libs/ or apps/ by its own name." >&2
+                return 1
+                ;;
+            esac
+
+            MODULE_PATH=""
+            for ROOT in libs apps; do
+              if [ -d "$ROOT/$1" ]; then
+                MODULE_PATH="$ROOT/$1"
+                break
+              fi
+            done
+
+            if [ -z "$MODULE_PATH" ]; then
+              echo "gbox module $1: no directory at libs/$1 or apps/$1, name a directory under libs/ or apps/." >&2
+              return 1
+            fi
+
+            # The trailing slash keeps the module name from matching a longer sibling.
+            MODULES+=("$MODULE_PATH/")
+            ;;
+          -*)
+            echo "gbox tidy: unknown option \`$1\`, pass \`--tests\`, \`-m <module>\`, or a path." >&2
+            return 1
+            ;;
+          *)
+            # The positionals are compiled as a python regex downstream, where an unparsable
+            # one raises a traceback -- and only once the build has finished.
+            if ! REGEX_ERROR=$(python3 -c "$REGEX_CHECK" "$1" 2>&1); then
+              echo "gbox tidy: \`$1\` is not a valid regex, $REGEX_ERROR." >&2
+              return 1
+            fi
+
+            FILES+=("$1")
+            ;;
+        esac
+        shift
+      done
+
+      # What is compiled downstream is the positionals joined on `|`, not each one alone, so
+      # two that are separately valid can still be invalid together: a group name repeated
+      # across them, or an inline flag no longer at the front once it follows an alternative.
+      if [ "''${#FILES[@]}" -gt 0 ]; then
+        JOINED=$(printf '%s|' "''${FILES[@]}")
+
+        if ! REGEX_ERROR=$(python3 -c "$REGEX_CHECK" "''${JOINED%|}" 2>&1); then
+          echo "gbox tidy: the paths given are not a valid regex together, $REGEX_ERROR." >&2
+          return 1
+        fi
+      fi
+
+      # clang-tidy replays each compile line verbatim, and a module unit's line names an
+      # @*.modmap response file that only a build produces. Linting an unbuilt tree fails
+      # every module unit with `module 'gbox.core' not found`.
+      gbox-build "''${CONF_ARGS[@]}" || return
+
+      # A test target lands in the compile database whatever GBOX_BUILD_TEST is set to, but
+      # only a test build writes the module maps its compile line names. GBOX_BUILD_TEST
+      # selects one set or the other, so --tests sweeps the tests in place of the rest.
+      if [ "$TESTS" -eq 1 ]; then
+        PATTERN='(?=.*/test/)'
+      else
+        PATTERN='(?!.*/test/)'
+      fi
+
+      # The modules narrow the sweep rather than widen it, so they belong here and not among
+      # the positionals: those are OR'd into one alternation downstream, which would make
+      # `-m core option` mean core *or* option instead of the option units within core.
+      if [ "''${#MODULES[@]}" -gt 0 ]; then
+        ALTERNATION=$(printf '%s|' "''${MODULES[@]}")
+        PATTERN="$PATTERN(?=.*(''${ALTERNATION%|}))"
+      fi
+
+      FILTER=(-source-filter "$PATTERN.*")
+
+      # Each positional is matched against the source paths in the database, so a path
+      # relative to the workspace root selects the unit it names. None means all of them.
+      #
+      # The per-unit tally counts every diagnostic the checks matched, including the ones
+      # HeaderFilterRegex then discards -- upwards of a million a sweep, effectively all of
+      # them raised against the LLVM headers. Drop it so it cannot bury the real findings.
+      # Both halves buffer by the block once their output is a pipe rather than the terminal,
+      # which holds every finding back until the run ends. A unit can take half a minute, so
+      # keep them line buffered or the command reads as hung.
+      PYTHONUNBUFFERED=1 \
+      run-clang-tidy -p build -quiet -j "$(nproc)" "''${FILTER[@]}" "''${FILES[@]}" 2>&1 \
+        | grep --line-buffered -vE '^[0-9]+ warnings? generated\.$'
+
+      return "''${PIPESTATUS[0]}"
     }
 
     gbox-clean() {
