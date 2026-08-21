@@ -15,7 +15,7 @@ using namespace result;
 namespace gbclang::cli {
 
 /// Various error defintions used in the CLI interface.
-enum class CliErrorKind {
+enum class CliErrorKind : uint8_t {
     /// An argument provided to the CLI was incorrectly parsed
     InvalidArgs,
 
@@ -35,7 +35,7 @@ extern Result<std::string> clangPathFromName(std::string path);
 
 // TODO: DOCS
 Result<std::string> writeVirtualFile(
-    const std::string &input_file, const std::string &rewritten_file,
+    const std::string &input_file, const std::string &rewritten_content,
     const std::string &output_dir
 );
 

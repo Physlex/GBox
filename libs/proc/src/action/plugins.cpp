@@ -34,26 +34,26 @@ tokens::TokenStream proc_macro_executor(tokens::TokenStream &input) {
 void HandleFuncDecl::run(const clang::ast_matchers::MatchFinder::MatchResult &res) {
     const clang::FunctionDecl *func_decl =
         res.Nodes.getNodeAs<clang::FunctionDecl>("funcDecl");
-    if (!func_decl) {
+    if (func_decl == nullptr) {
         return;
     }
 
     const clang::FunctionDecl *fdef = func_decl->getDefinition();
-    if (!fdef) {
+    if (fdef == nullptr) {
         return;
     }
 
     std::vector<llvm::StringRef> annotations;
 
-    for (auto attr : fdef->getAttrs()) {
+    for (auto *attr : fdef->getAttrs()) {
         const auto *annotated_attr = dyn_cast<clang::AnnotateAttr>(attr);
-        if (annotated_attr) {
+        if (annotated_attr != nullptr) {
             annotations.push_back(annotated_attr->getAnnotation());
         }
     }
 
     // Skip functions that have no annotations
-    if (annotations.size() == 0) {
+    if (annotations.empty()) {
         return;
     }
 
@@ -78,7 +78,7 @@ void HandleFuncDecl::run(const clang::ast_matchers::MatchFinder::MatchResult &re
     // back into the real SourceManager (required for Rewriter::ReplaceText).
     const char *buf_start = slice.data();
     const char *buf_end = buf_start + slice.size();
-    clang::Token tok;
+    clang::Token tok{};
     std::vector<clang::Token> tokens;
     auto lexer = clang::Lexer(
         src_begin, res.Context->getLangOpts(), buf_start, buf_start, buf_end
@@ -115,7 +115,6 @@ void HandleFuncDecl::run(const clang::ast_matchers::MatchFinder::MatchResult &re
 
     // Match against each token, and generate C++ code from them
 
-    std::string code = stream.toString();
     std::string test_code =
         "static inline int32_t hello_msg(void *args) { printf(\"TEST: It Worked!\"); }";
     const clang::SourceRange range = fdef->getSourceRange();
@@ -140,7 +139,7 @@ bool ProcMacroAction::BeginSourceFileAction(clang::CompilerInstance &ci) {
 void ProcMacroAction::EndSourceFileAction() {
     auto file_id = getCompilerInstance().getSourceManager().getMainFileID();
     const llvm::RewriteBuffer *buf = this->rewriter_.getRewriteBufferFor(file_id);
-    if (buf) {
+    if (buf != nullptr) {
         this->rewritten_[std::string(this->infile_)] =
             std::string(buf->begin(), buf->end());
     }

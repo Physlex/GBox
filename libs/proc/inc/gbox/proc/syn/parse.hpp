@@ -16,6 +16,8 @@
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/MemoryBufferRef.h>
 
+#include <utility>
+
 #include "gbox/proc/syn/tokens.hpp"
 
 namespace gbox::parse {
@@ -31,29 +33,28 @@ struct ClangCtx {
 struct FileInfo {
     clang::FileID id;
     llvm::MemoryBufferRef buffer;
-    const size_t start;
-    const size_t length;
+    size_t start;
+    size_t length;
 };
 
 /// Implements the parsing interface for converting clang tokens to proc macro IR.
 class Parser {
   public:
-    Parser(ClangCtx clang, FileInfo file) : clang_(clang), file_(file), idx_(0) {}
+    Parser(ClangCtx clang, FileInfo file) : clang_(std::move(clang)), file_(file) {}
 
     /// @brief Parsing implementation for the proc macro AST.
-    inline bool parse(tokens::TokenStream &in) {
+    bool parse(tokens::TokenStream &in) {
         const size_t raw_tokens_cnt = this->clang_.raw_tokens.size();
-        while ((this->idx_ < raw_tokens_cnt) && this->parse_aux(in));
-        if (this->idx_ < raw_tokens_cnt)
-            return false;
-        else
-            return true;
+        while ((this->idx_ < raw_tokens_cnt) && this->parse_aux(in)) {
+            ;
+        }
+        return this->idx_ >= raw_tokens_cnt;
     }
 
   private:
     // TODO: DOCS
     bool parse(
-        tokens::TokenStream &in, const clang::Token tok, const llvm::StringRef symbol,
+        tokens::TokenStream &in, clang::Token tok, llvm::StringRef symbol,
         tokens::Span span
     );
 
@@ -65,31 +66,31 @@ class Parser {
      */
 
     bool parse_literals(
-        tokens::TokenStream &in, const clang::Token tok, const llvm::StringRef symbol,
+        tokens::TokenStream &in, clang::Token tok, llvm::StringRef symbol,
         tokens::Span span
     );
 
     bool parse_identifiers(
-        tokens::TokenStream &in, const clang::Token tok, const llvm::StringRef symbol,
+        tokens::TokenStream &in, clang::Token tok, llvm::StringRef symbol,
         tokens::Span span
     );
 
     bool parse_numerics(
-        tokens::TokenStream &in, const clang::Token tok, const llvm::StringRef symbol,
+        tokens::TokenStream &in, clang::Token tok, llvm::StringRef symbol,
         tokens::Span span
     );
 
     bool parse_group(
-        tokens::TokenStream &in, const clang::Token tok, const llvm::StringRef symbol,
+        tokens::TokenStream &in, clang::Token tok, llvm::StringRef slice,
         tokens::Span span
     );
 
     bool parse_punctuation(
-        tokens::TokenStream &in, const clang::Token tok, const llvm::StringRef symbol,
+        tokens::TokenStream &in, clang::Token tok, llvm::StringRef symbol,
         tokens::Span span
     );
 
-    inline bool parse_aux(tokens::TokenStream &in) {
+    bool parse_aux(tokens::TokenStream &in) {
         const clang::Token curr_tok = this->clang_.raw_tokens.at(this->idx_);
 
         const uint32_t tok_start = this->clang_.sm.getFileOffset(curr_tok.getLocation());
@@ -110,7 +111,7 @@ class Parser {
 
     ClangCtx clang_;
     FileInfo file_;
-    size_t idx_;
+    size_t idx_{0};
 };
 
 }  // namespace gbox::parse

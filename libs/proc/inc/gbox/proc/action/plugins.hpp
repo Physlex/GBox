@@ -49,10 +49,9 @@ class ProcMacroConsumer : public clang::ASTConsumer {
 class ProcMacroAction : public clang::ASTFrontendAction {
   public:
     ProcMacroAction() = default;
-    virtual ~ProcMacroAction() = default;
 
     /// Public constructor
-    inline std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(
+    std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(
         clang::CompilerInstance &ci, llvm::StringRef infile
     ) override {
         this->infile_ = infile;
@@ -60,7 +59,7 @@ class ProcMacroAction : public clang::ASTFrontendAction {
         return std::make_unique<ProcMacroConsumer>(rewriter_);
     }
 
-    inline std::unordered_map<std::string, std::string> getRewritten() const {
+    std::unordered_map<std::string, std::string> getRewritten() const {
         return this->rewritten_;
     }
 

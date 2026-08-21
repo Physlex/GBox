@@ -9,7 +9,7 @@ import gbox.core;
 export namespace executor::policy {
 
 /// Error definitions for the executor module
-enum class Error {
+enum class Error : uint8_t {
     /// Failed to add new memory to the execution pool due to lack of space
     Overrun,
 };
@@ -28,7 +28,7 @@ struct Scheduler {
     using Task = Fn<Sig>;
 
     /// Place a task into the executor, but don't execute said task
-    inline Result<void> schedule(Task task) {
+    Result<void> schedule(Task task) {
         return static_cast<Derived *>(this)->schedule_impl(task);
     }
 };

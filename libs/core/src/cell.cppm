@@ -31,7 +31,7 @@ using result::Err;
 using result::Ok;
 
 /// Error definitions for the cell module
-enum class Error {
+enum class Error : uint8_t {
     /// Despite memory being allocated for the cell's inner-type, the cell hasn't yet
     /// received data to fill the type.
     Empty,
@@ -59,7 +59,7 @@ class StaticCell : public memory::Pinned {
     /// If a cell has been initialized prior, then it is locked, and cannot be
     /// re-initialized.
     [[nodiscard]]
-    inline Result<T &> init(T &&value) {
+    Result<T &> init(T &&value) {
         [[unlikely]]
         if (this->inner_.is_some()) {
             return Err(Error::Locked);
@@ -68,11 +68,6 @@ class StaticCell : public memory::Pinned {
         this->inner_ = Some(std::move(value));
         return Ok(&this->inner_.assume_some());
     }
-
-  protected:
-    /// Forces the user to allocate memory in a way that never gets de-allocated, a'la
-    /// static memory. (Or a leaked heap, effectively the same thing, but discouraged)
-    ~StaticCell() = delete;
 
   private:
     // Atomic, meaning (ideally) safe across concurrency primitives at a basic level.

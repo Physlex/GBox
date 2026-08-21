@@ -43,7 +43,9 @@ bool Parser::parse(
 
     if (tok.isAnyIdentifier()) {
         return this->parse_identifiers(in, tok, symbol, span);
-    } else if (tok.isLiteral()) {
+    }
+
+    if (tok.isLiteral()) {
         return this->parse_literals(in, tok, symbol, span);
     } else if (tok::isLeftDelimiter(tok.getKind())) {
         return this->parse_group(in, tok, symbol, span);
@@ -144,7 +146,7 @@ bool Parser::parse_group(
     size_t tail = head;
     int depth = 1;
     const size_t raw_tokens_cnt = this->clang_.raw_tokens.size();
-    while (depth) {
+    while (depth != 0) {
         tail += 1;
         if (tail >= raw_tokens_cnt) {
             llvm::outs() << "No matching kind found for delimiter\n";
@@ -153,10 +155,11 @@ bool Parser::parse_group(
 
         const clang::Token tail_match = this->clang_.raw_tokens.at(tail);
         const auto tail_kind = tail_match.getKind();
-        if (tail_kind == kind)
+        if (tail_kind == kind) {
             depth++;
-        else if (tail_kind == matching_kind)
+        } else if (tail_kind == matching_kind) {
             depth--;
+        }
     }
 
     const clang::Token most_recent_match = this->clang_.raw_tokens.at(tail);
@@ -168,8 +171,12 @@ bool Parser::parse_group(
 
     // Recursively parse each token within the inner group
     TokenStream inner;
-    while ((this->idx_ < tail) && (this->parse_aux(inner)));
-    if (this->idx_ != tail) return false;
+    while ((this->idx_ < tail) && (this->parse_aux(inner))) {
+        ;
+    }
+    if (this->idx_ != tail) {
+        return false;
+    }
 
     in.emplace_back(
         std::make_unique<Group>(

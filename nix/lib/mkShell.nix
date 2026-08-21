@@ -38,7 +38,7 @@ pkgs.mkShell ((builtins.removeAttrs args [
     }
 
     gbox-tidy() {
-      local CONF_ARGS=() FILES=() FILTER=() MODULES=() ROOT="" MODULE_PATH="" TESTS=0
+      local CONF_ARGS=() FILES=() FILTER=() MODULES=() TIDY_ARGS=() ROOT="" MODULE_PATH="" TESTS=0
       local REGEX_ERROR="" PATTERN="" ALTERNATION="" JOINED=""
       local REGEX_CHECK='import re, sys
 try:
@@ -59,9 +59,6 @@ except re.error as exc:
             fi
             shift
 
-            # A module is named by its bare directory name. Without this, any name the
-            # concatenation happens to resolve is taken -- `core/src` scopes to a
-            # subdirectory, and `.` or `..` resolve to libs itself and sweep nothing.
             case "$1" in
               "" | "." | ".." | */*)
                 echo "gbox module $1: not a module name, name a directory under libs/ or apps/ by its own name." >&2
@@ -85,8 +82,15 @@ except re.error as exc:
             # The trailing slash keeps the module name from matching a longer sibling.
             MODULES+=("$MODULE_PATH/")
             ;;
+          --)
+            # Taken verbatim, so run-clang-tidy's own options stay reachable without this
+            # function having to know them.
+            shift
+            TIDY_ARGS+=("$@")
+            break
+            ;;
           -*)
-            echo "gbox tidy: unknown option \`$1\`, pass \`--tests\`, \`-m <module>\`, or a path." >&2
+            echo "gbox tidy: unknown option \`$1\`, pass \`--tests\`, \`-m <module>\`, \`--\`, or a path." >&2
             return 1
             ;;
           *)
@@ -103,9 +107,6 @@ except re.error as exc:
         shift
       done
 
-      # What is compiled downstream is the positionals joined on `|`, not each one alone, so
-      # two that are separately valid can still be invalid together: a group name repeated
-      # across them, or an inline flag no longer at the front once it follows an alternative.
       if [ "''${#FILES[@]}" -gt 0 ]; then
         JOINED=$(printf '%s|' "''${FILES[@]}")
 
@@ -115,23 +116,14 @@ except re.error as exc:
         fi
       fi
 
-      # clang-tidy replays each compile line verbatim, and a module unit's line names an
-      # @*.modmap response file that only a build produces. Linting an unbuilt tree fails
-      # every module unit with `module 'gbox.core' not found`.
       gbox-build "''${CONF_ARGS[@]}" || return
 
-      # A test target lands in the compile database whatever GBOX_BUILD_TEST is set to, but
-      # only a test build writes the module maps its compile line names. GBOX_BUILD_TEST
-      # selects one set or the other, so --tests sweeps the tests in place of the rest.
       if [ "$TESTS" -eq 1 ]; then
         PATTERN='(?=.*/test/)'
       else
         PATTERN='(?!.*/test/)'
       fi
 
-      # The modules narrow the sweep rather than widen it, so they belong here and not among
-      # the positionals: those are OR'd into one alternation downstream, which would make
-      # `-m core option` mean core *or* option instead of the option units within core.
       if [ "''${#MODULES[@]}" -gt 0 ]; then
         ALTERNATION=$(printf '%s|' "''${MODULES[@]}")
         PATTERN="$PATTERN(?=.*(''${ALTERNATION%|}))"
@@ -141,15 +133,8 @@ except re.error as exc:
 
       # Each positional is matched against the source paths in the database, so a path
       # relative to the workspace root selects the unit it names. None means all of them.
-      #
-      # The per-unit tally counts every diagnostic the checks matched, including the ones
-      # HeaderFilterRegex then discards -- upwards of a million a sweep, effectively all of
-      # them raised against the LLVM headers. Drop it so it cannot bury the real findings.
-      # Both halves buffer by the block once their output is a pipe rather than the terminal,
-      # which holds every finding back until the run ends. A unit can take half a minute, so
-      # keep them line buffered or the command reads as hung.
       PYTHONUNBUFFERED=1 \
-      run-clang-tidy -p build -quiet -j "$(nproc)" "''${FILTER[@]}" "''${FILES[@]}" 2>&1 \
+      run-clang-tidy -p build -quiet -j "$(nproc)" "''${FILTER[@]}" "''${TIDY_ARGS[@]}" "''${FILES[@]}" 2>&1 \
         | grep --line-buffered -vE '^[0-9]+ warnings? generated\.$'
 
       return "''${PIPESTATUS[0]}"

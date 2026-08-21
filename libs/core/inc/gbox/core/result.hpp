@@ -63,12 +63,12 @@ class Result {
         if constexpr (std::is_void_v<T>) {
             this->inner_ = std::monostate();
         } else {
-            this->inner_ = std::move(o.value);
+            this->inner_ = std::move(o).value;
         }
     };
 
     /// Constructs a Result from an erroneous value
-    Result(Err<E> &&e) : inner_(std::move(e.value)) {};
+    Result(Err<E> &&e) : inner_(std::move(e).value) {};
 
     /// Transform the option type from type Result<T> to type Result<U>, where U is the
     /// return type of the entered lambda Fn
@@ -81,13 +81,13 @@ class Result {
             return Err(std::get<E>(this->inner_));
         }
 
-        return Ok(f(std::get<T>(this->inner_)));
+        return Ok(std::forward<Fn>(f)(std::get<T>(this->inner_)));
     }
 
     /// Returns the valid value. Throws `std::bad_variant_access` if the result is
     /// erroneous
     [[nodiscard]]
-    inline T assume_ok() {
+    T assume_ok() {
         if constexpr (std::is_void_v<T>) {
             std::get<std::monostate>(this->inner_);
             return;
@@ -100,22 +100,22 @@ class Result {
     /// Returns the erroneous value. Throws `std::bad_variant_access` if the result is
     /// valid
     [[nodiscard]]
-    inline E assume_err() {
+    E assume_err() {
         assert(std::holds_alternative<E>(this->inner_));
         return std::get<E>(this->inner_);
     }
 
     /// Returns a reference to the underlying variant storage
     [[nodiscard]]
-    inline ResultInner<T, E> &inner() {
+    ResultInner<T, E> &inner() {
         return this->inner_;
     }
 
     /// Returns true if the result holds an erroneous value
-    inline bool is_err() { return std::holds_alternative<E>(this->inner_); }
+    bool is_err() { return std::holds_alternative<E>(this->inner_); }
 
     /// Returns true if the result holds a valid value
-    inline bool is_ok() {
+    bool is_ok() {
         if constexpr (std::is_void_v<T>) {
             return std::holds_alternative<std::monostate>(this->inner_);
         } else {
@@ -166,8 +166,9 @@ auto match(AbstractSumType &&variant, Matches &&...matches) {
 template <typename T, typename E, typename OkMatch, typename ErrMatch>
 auto match_result(Result<T, E> &&res, OkMatch &&ok_match, ErrMatch &&err_match) {
     return match(
-        std::move(res.inner()), [&](T &&val) { return ok_match(Ok<T>{std::move(val)}); },
-        [&](E &&err) { return err_match(Err<E>{std::move(err)}); }
+        std::move(res).inner(),
+        [&](T &&val) { return std::forward<OkMatch>(ok_match)(Ok<T>{std::move(val)}); },
+        [&](E &&err) { return std::forward<ErrMatch>(err_match)(Err<E>{std::move(err)}); }
     );
 }
 

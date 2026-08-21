@@ -14,11 +14,10 @@
 
 using namespace gbox::action;
 using namespace result;
-Action::Action(clang::DiagnosticsEngine &dengine)
-    : dengine_(dengine), action_(plugins::ProcMacroAction()) {}
+Action::Action(clang::DiagnosticsEngine &dengine) : dengine_(dengine) {}
 
 gbox::action::Result<std::unordered_map<std::string, std::string> > Action::execute(
-    std::vector<const char *> args
+    const std::vector<const char *> &args
 ) {
     auto invocation = std::make_shared<clang::CompilerInvocation>();
     if (!clang::CompilerInvocation::CreateFromArgs(*invocation, args, this->dengine_)) {

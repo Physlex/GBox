@@ -77,7 +77,7 @@ class OwnedStorage : public memory::MoveOnly, public policy::Ring<OwnedStorage<T
         return Ok();
     }
 
-  protected:
+  private:
     std::array<T, C> storage_;
 };
 

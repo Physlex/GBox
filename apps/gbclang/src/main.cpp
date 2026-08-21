@@ -102,17 +102,21 @@ int32_t main(int argc, const char **argv) {
         clang::driver::ToolChain::getTargetAndModeFromProgramName(clean_path);
     driver.setTargetAndMode(target_and_mode);
 
-    auto compilation = driver.BuildCompilation(args_vec);
-    if (!compilation || diag->hasErrorOccurred()) {
+    auto *compilation = driver.BuildCompilation(args_vec);
+    if ((compilation == nullptr) || diag->hasErrorOccurred()) {
         return 1;
     }
 
     for (const auto &job : compilation->getJobs()) {
         const auto *cmd = llvm::dyn_cast<clang::driver::Command>(&job);
-        if (!cmd) continue;
+        if (cmd == nullptr) {
+            continue;
+        }
 
         const llvm::opt::ArgStringList &args = cmd->getArguments();
-        if (!llvm::is_contained(args, llvm::StringRef("-emit-obj"))) continue;
+        if (!llvm::is_contained(args, llvm::StringRef("-emit-obj"))) {
+            continue;
+        }
 
         const char *const *begin = args.data() + 1;
         const char *const *end = begin + args.size() - 1;

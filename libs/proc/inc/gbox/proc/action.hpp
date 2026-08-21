@@ -17,7 +17,7 @@ namespace gbox::action {
 /**
  *  @brief This enumerator defines the error kinds avaliable for a given action
  */
-enum class ErrorKind { InvalidArgs, Action };
+enum class ErrorKind : uint8_t { InvalidArgs, Action };
 
 /// Adaptor result alias. Uses the gbox::adaptor::ErrorKind as it's errorfull value.
 template <typename T>
@@ -32,14 +32,11 @@ class Action {
     /// @brief Constructor for the action
     Action(clang::DiagnosticsEngine &dengine);
 
-    /// @brief Default deconstructor for the compiler action
-    ~Action() = default;
-
     /**
      *  @brief Provided the given arguments, execute the action.
      */
     Result<std::unordered_map<std::string, std::string>> execute(
-        std::vector<const char *> args
+        const std::vector<const char *> &args
     );
 
   private:

@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace gbox::tokens {
@@ -17,7 +18,7 @@ class Group;
 /// TODO: DOCS
 class TokenStream : public std::vector<TokenTree> {
   public:
-    inline std::string toString() const {
+    std::string toString() const {
         uint32_t cursor = 0;
         return this->toString(cursor);
     }
@@ -31,9 +32,9 @@ class Span {
   public:
     Span(uint32_t start, uint32_t length) : start_(start), length_(length) {};
 
-    inline uint32_t start() const { return this->start_; }
+    uint32_t start() const { return this->start_; }
 
-    inline uint32_t length() const { return this->length_; }
+    uint32_t length() const { return this->length_; }
 
   private:
     uint32_t start_;
@@ -46,9 +47,9 @@ class TokenData {
   public:
     TokenData(Symbol sym, Span span) : sym_(std::move(sym)), span_(span) {}
 
-    const inline Symbol &symbol() const { return this->sym_; }
+    const Symbol &symbol() const { return this->sym_; }
 
-    inline Span span() const { return this->span_; }
+    Span span() const { return this->span_; }
 
   private:
     Symbol sym_;
@@ -59,7 +60,7 @@ class TokenData {
 class Literal {
   public:
     // This enum defines the kinds / forms a literal can take
-    enum class Kind {
+    enum class Kind : uint8_t {
         // A standard integral type like 0xFF, 32, 0, ...
         Integer,
         // A floating point type such as 0.3f, 0.1, 10e, ...
@@ -73,11 +74,11 @@ class Literal {
     };
 
     Literal(std::string sym, Span span, Literal::Kind kind)
-        : data_(sym, span), kind_(kind) {}
+        : data_(std::move(sym), span), kind_(kind) {}
 
-    inline std::string symbol() const { return this->data_.symbol(); }
+    std::string symbol() const { return this->data_.symbol(); }
 
-    inline Span span() const { return this->data_.span(); }
+    Span span() const { return this->data_.span(); }
 
   private:
     TokenData<std::string> data_;
@@ -88,11 +89,11 @@ class Literal {
 class Ident {
   public:
     Ident(std::string symbol, Span span, bool is_raw)
-        : data_(symbol, span), is_raw_(is_raw) {}
+        : data_(std::move(symbol), span), is_raw_(is_raw) {}
 
-    inline std::string symbol() const { return this->data_.symbol(); }
+    std::string symbol() const { return this->data_.symbol(); }
 
-    inline Span span() const { return this->data_.span(); }
+    Span span() const { return this->data_.span(); }
 
   private:
     TokenData<std::string> data_;
@@ -103,11 +104,11 @@ class Ident {
 class Punc {
   public:
     Punc(std::string sym, Span span, bool is_join)
-        : data_(sym, span), is_join_(is_join) {}
+        : data_(std::move(sym), span), is_join_(is_join) {}
 
-    inline std::string symbol() const { return this->data_.symbol(); }
+    std::string symbol() const { return this->data_.symbol(); }
 
-    inline Span span() const { return this->data_.span(); }
+    Span span() const { return this->data_.span(); }
 
   private:
     TokenData<std::string> data_;
@@ -128,21 +129,21 @@ overloaded(Ts...) -> overloaded<Ts...>;
 //       because _HOLY_SHIT_
 class TokenTree {
   public:
-    enum class Kind { Literal, Ident, Punc, Group };
+    enum class Kind : uint8_t { Literal, Ident, Punc, Group };
 
     union Value {
         Value() {}
-        Value(Literal l);
-        Value(Ident i);
-        Value(Punc p);
-        Value(std::unique_ptr<Group> g);
+        Value(Literal value);
+        Value(Ident value);
+        Value(Punc value);
+        Value(std::unique_ptr<Group> value);
 
         ~Value();
 
         Value(const Value &) = delete;
         Value &operator=(const Value &) = delete;
-        Value(Value &&) {}
-        Value &operator=(Value &&) { return *this; }
+        Value(Value && /*unused*/) noexcept {}
+        Value &operator=(Value && /*unused*/) noexcept { return *this; }
 
         Literal literal;
         Ident ident;
@@ -150,7 +151,6 @@ class TokenTree {
         std::unique_ptr<Group> group;
     };
 
-  public:
     /// @brief Construct token tree from a literal
     TokenTree(Literal value);
 
@@ -169,7 +169,7 @@ class TokenTree {
     // These are the deleted copy constructors that make this move-only
     TokenTree(const TokenTree &) = delete;
     TokenTree &operator=(const TokenTree &) = delete;
-    TokenTree &operator=(TokenTree &&) = default;
+    TokenTree &operator=(TokenTree &&) noexcept = default;
     TokenTree(TokenTree &&other) noexcept : kind_(other.kind_) {
         switch (kind_) {
             case Kind::Literal:
@@ -187,20 +187,20 @@ class TokenTree {
         }
     }
 
-    inline TokenTree::Kind kind() { return this->kind_; }
+    TokenTree::Kind kind() { return this->kind_; }
 
     /// TODO: DOCS
     template <typename Fn>
     auto match(Fn &&f) const {
         switch (this->kind_) {
             case Kind::Punc:
-                return f(this->value_.punc);
+                return std::forward<Fn>(f)(this->value_.punc);
             case Kind::Ident:
-                return f(this->value_.ident);
+                return std::forward<Fn>(f)(this->value_.ident);
             case Kind::Literal:
-                return f(this->value_.literal);
+                return std::forward<Fn>(f)(this->value_.literal);
             case Kind::Group:
-                return f(this->value_.group);
+                return std::forward<Fn>(f)(this->value_.group);
         }
     }
 
@@ -213,7 +213,7 @@ class TokenTree {
 class Group {
   public:
     // TODO: DOCS
-    enum class Delimiter {
+    enum class Delimiter : uint8_t {
         /// A token such as one of "()"
         Parenthesis,
         /// A token such as one of "{}"
@@ -225,11 +225,11 @@ class Group {
     Group(TokenStream stream, Span span, Delimiter delim)
         : data_(std::move(stream), span), delim_(delim) {}
 
-    inline const TokenStream &tree() const { return this->data_.symbol(); }
+    const TokenStream &tree() const { return this->data_.symbol(); }
 
-    inline const Span span() const { return this->data_.span(); }
+    Span span() const { return this->data_.span(); }
 
-    inline const Delimiter kind() const { return this->delim_; }
+    Delimiter kind() const { return this->delim_; }
 
   private:
     TokenData<TokenStream> data_;

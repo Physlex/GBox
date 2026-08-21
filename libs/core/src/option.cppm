@@ -33,8 +33,8 @@ template <typename T>
 class Option {
   public:
     Option() = delete;
-    Option(Some<T> &&some) { this->inner_ = std::move(some.value); }
-    Option(None none) { this->inner_ = None(); }
+    Option(Some<T> &&some) : inner_(std::move(some).value) {}
+    Option(None none) : inner_(None()) {}
 
     /// Transform the option type from type Option<T> to type Option<U>, where U is the
     /// return type of the entered lambda Fn
@@ -48,21 +48,23 @@ class Option {
             return None();
         }
 
-        return Some(f(std::get<T>(this->inner_)));
+        return Some(std::forward<Fn>(f)(std::get<T>(this->inner_)));
     }
 
     /// Assume that the some type is as specified, and if not, throw an exception
     [[nodiscard]]
-    inline T &assume_some() const {
+    T &assume_some() const {
         assert(std::holds_alternative<T>(this->inner_));
         return std::get<T>(this->inner_);
     }
 
     /// Checks if the inner value is a some type
-    inline bool is_some() const { return std::holds_alternative<T>(this->inner_); }
+    [[nodiscard]] bool is_some() const { return std::holds_alternative<T>(this->inner_); }
 
     /// Checks if the inner value is a none type
-    inline bool is_none() const { return std::holds_alternative<None>(this->inner_); }
+    [[nodiscard]] bool is_none() const {
+        return std::holds_alternative<None>(this->inner_);
+    }
 
   private:
     OptionInner<T> inner_;

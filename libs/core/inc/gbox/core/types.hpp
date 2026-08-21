@@ -7,8 +7,8 @@
 
 #include <cstddef>
 
-typedef float float32_t;
-typedef double float64_t;
+using float32_t = float;
+using float64_t = double;
 
 /// An empty function deduction guideline
 ///

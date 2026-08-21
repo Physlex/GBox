@@ -12,30 +12,36 @@ using namespace gbox::tokens;
 std::string TokenStream::toString(uint32_t &cursor) const {
     std::string res;
 
-    for (auto &node : *this) {
+    for (const auto &node : *this) {
         node.match(
             overloaded{
                 [&res, &cursor](const Ident &i) {
                     const auto start = i.span().start();
-                    for (; cursor < start; cursor += 1) res.push_back(' ');
+                    for (; cursor < start; cursor += 1) {
+                        res.push_back(' ');
+                    }
                     res.append(i.symbol());
                     cursor += i.span().length();
                 },
                 [&res, &cursor](const Literal &l) {
                     const auto start = l.span().start();
-                    for (; cursor < start; cursor += 1) res.push_back(' ');
+                    for (; cursor < start; cursor += 1) {
+                        res.push_back(' ');
+                    }
                     res.append(l.symbol());
                     cursor += l.span().length();
                 },
                 [&res, &cursor](const Punc &p) {
                     const auto start = p.span().start();
-                    for (; cursor < start; cursor += 1) res.push_back(' ');
+                    for (; cursor < start; cursor += 1) {
+                        res.push_back(' ');
+                    }
                     res.append((p.symbol() == ";") ? p.symbol() + "\n" : p.symbol());
                     cursor += p.span().length();
                 },
                 [&res, &cursor](const std::unique_ptr<Group> &g) {
-                    std::string l_delim = "";
-                    std::string r_delim = "";
+                    std::string l_delim;
+                    std::string r_delim;
 
                     switch (g->kind()) {
                         case Group::Delimiter::Brace: {
@@ -58,14 +64,18 @@ std::string TokenStream::toString(uint32_t &cursor) const {
                     }
 
                     const auto start = g->span().start();
-                    for (; cursor < start; cursor += 1) res.push_back(' ');
+                    for (; cursor < start; cursor += 1) {
+                        res.push_back(' ');
+                    }
                     res.append(l_delim);
                     cursor += 1;
 
                     res.append(g->tree().toString(cursor));
 
                     const auto length = g->span().length();
-                    for (; cursor < length; cursor += 1) res.push_back(' ');
+                    for (; cursor < length; cursor += 1) {
+                        res.push_back(' ');
+                    }
                     res.append(r_delim);
                     cursor += 1;
                 },
