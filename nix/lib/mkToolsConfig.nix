@@ -1,12 +1,12 @@
-{ gbpkgs }:
+{ toolchain }:
 let
   clangd = ''
     cat > ./.clangd <<EOF
     CompileFlags:
       CompilationDatabase: build
       Add:
-        - -I${gbpkgs.gbox.toolchain.llvm.llvm.dev}/include
-        - -I${gbpkgs.gbox.toolchain.llvm.libclang.dev}/include
+        - -I${toolchain.llvm.llvm.dev}/include
+        - -I${toolchain.llvm.libclang.dev}/include
     Index:
       Background: Build
     EOF

@@ -29,7 +29,7 @@
           '';
         };
 
-        devShells.default = gbpkgs.mkShell {
+        devShells.default = gbpkgs.gbox.lib.mkShell {
           toolchain = gbpkgs.gbox.toolchain;
           buildInputs = [ gbpkgs.gbox.modules ];
         };

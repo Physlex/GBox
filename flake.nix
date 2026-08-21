@@ -19,34 +19,21 @@
   flake-utils.lib.eachDefaultSystem (system:
     let
       gbpkgs = import ./nix/gbpkgs.nix { inherit system nixpkgs; };
-      mkToolsConfig = import ./nix/mkToolsConfig.nix { inherit gbpkgs; };
       gbox = gbpkgs.gbox;
 
-      duck = gbpkgs.rustPlatform.buildRustPackage {
-        pname = "duck";
-        version = "unstable";
+      mkToolsConfig = gbox.lib.mkToolsConfig { inherit (gbox) toolchain; };
 
-        src = gbpkgs.fetchFromGitHub {
-          owner = "rdmsr";
-          repo = "duck";
-          rev = "ff95938795dfc9e55f891eb27de68a4bf63b122a";
-          hash = "sha256-aBCm69V//ZtYmmE3GAvUqErSnVIp59te6bJOlibICSM==";
-        };
-
-        cargoHash = "sha256-XzqhofYePhrusi5FPx9qWh8gBCsNUb3QAvi78SKNoJs=";
-
-        LIBCLANG_PATH = "${gbpkgs.gbox.toolchain.llvm.libclang.lib}/lib";
-        buildInputs = [ gbpkgs.gbox.toolchain.llvm.libclang ];
-        nativeBuildInputs = [ gbpkgs.pkg-config ];
+      duck = gbpkgs.callPackage ./nix/packages/duck.nix {
+        libclang = gbox.toolchain.llvm.libclang;
       };
     in {
       packages.default = gbox.modules;
-      devShells.default = gbpkgs.mkShell {
+      devShells.default = gbox.lib.mkShell {
         toolchain = gbox.toolchain;
 
-        buildInputs = gbox.modules.buildInputs;
-        nativeBuildInputs = gbox.modules.nativeBuildInputs
-          ++ [ gbpkgs.pre-commit gbpkgs.uv gbpkgs.gdb gbpkgs.nixd duck ];
+        buildInputs = gbox.lib.deps.buildInputs;
+        nativeBuildInputs = gbox.lib.deps.nativeBuildInputs
+          ++ [ gbpkgs.pre-commit gbpkgs.gdb gbpkgs.nixd duck ];
 
         shellHook = ''
           ${mkToolsConfig.config}

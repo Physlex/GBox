@@ -1,12 +1,15 @@
 { pkgs }:
+let
+  deps = import ./deps.nix { inherit pkgs; };
+in
 { toolchain }:
 pkgs.stdenv.mkDerivation {
   pname = "gbox-mono";
   version = "0.1.0";
-  src = ../.;
+  src = ../../.;
 
-  nativeBuildInputs = toolchain.nativeBuildInputs;
-  buildInputs = toolchain.buildInputs ++ [ pkgs.sdl3 ];
+  nativeBuildInputs = toolchain.nativeBuildInputs ++ deps.nativeBuildInputs;
+  buildInputs = toolchain.buildInputs ++ deps.buildInputs;
 
   configurePhase = toolchain.mkConfigurePhase {
     extraFlags = [

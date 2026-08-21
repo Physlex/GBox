@@ -31,7 +31,7 @@
         };
 
         target = "arm-none-eabi";
-        toolchain = gbpkgs.toolchains.${target};
+        toolchain = gbpkgs.gbox.lib.toolchains.${target};
 
         cpu = "cortex-m4";
         fpu = "fpv4-sp-d16";
@@ -99,7 +99,7 @@
           '';
         };
 
-        devShells.default = gbpkgs.mkShell {
+        devShells.default = gbpkgs.gbox.lib.mkShell {
           inherit toolchain;
           nativeBuildInputs = with gbpkgs; [ stm32cubemx xvfb-run ];
         };
