@@ -1,4 +1,4 @@
-gbox_library(proc NO_MODULES)
+gbox_library(proc)
 
 gbox_import(llvm PACKAGE LLVM)
 
@@ -7,4 +7,4 @@ gbox_import(clang
   LINK clangAST clangTooling clangBasic clangFrontend
 )
 
-gbox_dependencies(core)
+gbox_dependencies(core func-ky)

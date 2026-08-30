@@ -9,13 +9,14 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include <gbox/core/result.hpp>
-
 import gbox.core;
+import gbox.func_ky;
 import gbox.runtime;
 
+using result::Result;
+
 /// Error cases for the demonstration below.
-enum class Error {
+enum class Error : uint8_t {
     /// Doubling was asked for on a value that cannot be doubled.
     Negative
 };

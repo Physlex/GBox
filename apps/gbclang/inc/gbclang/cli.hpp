@@ -9,7 +9,8 @@
 
 #include <string>
 
-#include "gbox/core/result.hpp"
+import gbox.func_ky;
+using result::Result;
 
 using namespace result;
 namespace gbclang::cli {

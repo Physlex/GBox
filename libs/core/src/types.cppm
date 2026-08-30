@@ -19,6 +19,3 @@ export using ::uintptr_t;
 
 export using ::float32_t;
 export using ::float64_t;
-
-export using ::EmptyFn;
-export using ::Fn;

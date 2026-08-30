@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 
-import gbox.core;
+import gbox.ring;
 
 TEST(ringErrorVariants, ringTests) {
     ASSERT_NE(ring::Error::Enqueue, ring::Error::Dequeue);

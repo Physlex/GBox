@@ -1,9 +1,9 @@
 module;
 
-#include <cassert>
+#include <exception>
 #include <variant>
 
-export module gbox.core:option;
+export module gbox.func_ky:option;
 
 //! This module implements option typing to promote null-and-missing errors to the
 //! compiler
@@ -42,8 +42,8 @@ class Option {
     /// Maps the options inner type to a type specified by the lambda. Expects that the
     /// option is `Some`. If it is instead `None`, then return early as the `None` type.
     template <typename Fn>
-    [[nodiscard]]
     auto map(Fn &&f) -> Option<decltype(f(std::declval<T>()))> {
+        [[unlikely]]
         if (this->is_none()) {
             return None();
         }
@@ -51,11 +51,46 @@ class Option {
         return Some(std::forward<Fn>(f)(std::get<T>(this->inner_)));
     }
 
-    /// Assume that the some type is as specified, and if not, throw an exception
-    [[nodiscard]]
-    T &assume_some() const {
-        assert(std::holds_alternative<T>(this->inner_));
-        return std::get<T>(this->inner_);
+    /// Take the contained value out of the option type, replacing it with a `None` type,
+    /// instead.
+    ///
+    /// Map of Option<Some(T)> -> Option<None>, returning the inner T value.
+    ///
+    /// ## Error
+    /// Assumes the inner type is `Some`, if not, aborts.
+    T &&take() {
+        [[unlikely]]
+        if (!this->is_some()) {
+            std::terminate();
+        }
+
+        auto res = std::move(this->inner_);
+        this->inner_ = None();
+        return res;
+    }
+
+    /// Assume that the option type holds a valid type, then copies it for the consumer
+    ///
+    /// ## Error
+    /// If the option type is actually a `None` type, then the program will abort.
+    T assume_some() const noexcept {
+        [[unlikely]]
+        if (this->is_none()) {
+            std::terminate();
+        }
+
+        return this->inner_;
+    }
+
+    /// Assume that the option type holds nothing
+    ///
+    /// ## Error
+    /// If the option type is actually a `Some` type, then the program will abort.
+    void assume_none() const noexcept {
+        [[unlikely]]
+        if (this->is_some()) {
+            std::terminate();
+        }
     }
 
     /// Checks if the inner value is a some type

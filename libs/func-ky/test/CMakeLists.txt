@@ -1,0 +1,5 @@
+file(GLOB_RECURSE GBOX_FUNC-KY_TEST_SRC "${GBOX_FUNC-KY_TEST_PATH}/*.cpp")
+add_tests(
+  SOURCES ${GBOX_FUNC-KY_TEST_SRC}
+  LIBRARIES gbox::func-ky
+)

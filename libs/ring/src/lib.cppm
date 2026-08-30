@@ -2,11 +2,11 @@ module;
 
 #include <cstddef>
 
-export module gbox.core:ring;
+export module gbox.ring;
 
-import :ring.policy;
-import :ring.owned;
-import :ring.viewed;
+export import :policy;
+export import :owned;
+export import :viewed;
 
 export namespace ring {
 

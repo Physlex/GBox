@@ -2,10 +2,10 @@ module;
 
 #include <valarray>
 
-export module gbox.core:ring.viewed;
+export module gbox.ring:viewed;
 
-import :memory;
-import :ring.policy;
+import gbox.core;
+import :policy;
 
 export namespace ring::viewed {
 

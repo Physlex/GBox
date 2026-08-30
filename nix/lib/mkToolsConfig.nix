@@ -23,8 +23,8 @@ let
       -bugprone-easily-swappable-parameters,
       -readability-identifier-length,
       -readability-else-after-return,
-      -cppcoreguidelines-pro-type-vararg,
       -cppcoreguidelines-avoid-const-or-ref-data-members,
+      -cppcoreguidelines-pro-type-vararg,
       -cppcoreguidelines-pro-bounds-pointer-arithmetic,
       -cppcoreguidelines-pro-type-union-access,
       -readability-redundant-declaration

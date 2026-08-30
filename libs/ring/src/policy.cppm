@@ -4,9 +4,10 @@ module;
 #include <cstdint>
 #include <utility>
 
-export module gbox.core:ring.policy;
+export module gbox.ring:policy;
+import gbox.func_ky;
 
-import :result;
+using result::Result;
 
 export namespace ring::policy {
 

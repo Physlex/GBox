@@ -1,13 +1,14 @@
-#ifndef GBOX_CORE_RESULT_HPP_
-#define GBOX_CORE_RESULT_HPP_
+module;
 
 //! This module implements result-style error propagation semantics for C++.
 
-#include <cassert>
+#include <exception>
 #include <utility>
 #include <variant>
 
-namespace result {
+export module gbox.func_ky:result;
+
+export namespace result {
 
 /// Alias for the result storage type
 template <typename T, typename E>
@@ -59,16 +60,17 @@ template <typename T, typename E>
 class Result {
   public:
     /// Constructs a Result from an Ok value
-    Result(Ok<T> &&o) {
-        if constexpr (std::is_void_v<T>) {
-            this->inner_ = std::monostate();
-        } else {
-            this->inner_ = std::move(o).value;
-        }
-    };
+    Result(Ok<T> &&o)
+        requires(!std::is_void_v<T>)
+        : inner_(std::in_place_index<0>, std::move(o).value) {};
+
+    /// Constructs a Result from an Ok value carrying nothing
+    Result(const Ok<T> &_o)
+        requires(std::is_void_v<T>)
+        : inner_(std::in_place_index<0>) {};
 
     /// Constructs a Result from an erroneous value
-    Result(Err<E> &&e) : inner_(std::move(e).value) {};
+    Result(Err<E> &&e) : inner_(std::in_place_index<1>, std::move(e).value) {};
 
     /// Transform the option type from type Result<T> to type Result<U>, where U is the
     /// return type of the entered lambda Fn
@@ -84,25 +86,34 @@ class Result {
         return Ok(std::forward<Fn>(f)(std::get<T>(this->inner_)));
     }
 
-    /// Returns the valid value. Throws `std::bad_variant_access` if the result is
-    /// erroneous
+    /// Returns the valid value. Terminates if the result is erroneous
     [[nodiscard]]
-    T assume_ok() {
+    T assume_ok() noexcept {
         if constexpr (std::is_void_v<T>) {
-            std::get<std::monostate>(this->inner_);
+            if (!std::holds_alternative<std::monostate>(this->inner_)) {
+                std::terminate();
+            }
+
             return;
         } else {
-            assert(std::holds_alternative<T>(this->inner_));
-            return std::get<T>(std::move(this->inner_));
+            auto *ok = std::get_if<T>(&this->inner_);
+            if (ok == nullptr) {
+                std::terminate();
+            }
+
+            return std::move(*ok);
         }
     }
 
-    /// Returns the erroneous value. Throws `std::bad_variant_access` if the result is
-    /// valid
+    /// Returns the erroneous value. Terminates if the result is valid
     [[nodiscard]]
-    E assume_err() {
-        assert(std::holds_alternative<E>(this->inner_));
-        return std::get<E>(this->inner_);
+    E assume_err() noexcept {
+        auto *err = std::get_if<E>(&this->inner_);
+        if (err == nullptr) {
+            std::terminate();
+        }
+
+        return *err;
     }
 
     /// Returns a reference to the underlying variant storage
@@ -162,16 +173,14 @@ auto match(AbstractSumType &&variant, Matches &&...matches) {
 }
 
 /// Experimental. Match specialization for a result type, which forces an "Err" and "Ok"
-/// match arm. Does not support `Result<void, E>`.
+/// match arm
 template <typename T, typename E, typename OkMatch, typename ErrMatch>
 auto match_result(Result<T, E> &&res, OkMatch &&ok_match, ErrMatch &&err_match) {
     return match(
-        std::move(res).inner(),
+        std::move(std::move(res).inner()),
         [&](T &&val) { return std::forward<OkMatch>(ok_match)(Ok<T>{std::move(val)}); },
         [&](E &&err) { return std::forward<ErrMatch>(err_match)(Err<E>{std::move(err)}); }
     );
 }
 
 }  // namespace result
-
-#endif  // GBOX_CORE_RESULT_HPP_

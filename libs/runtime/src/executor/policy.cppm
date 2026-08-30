@@ -1,12 +1,13 @@
 module;
 
-#include "gbox/core/types.hpp"
-
 export module gbox.runtime:executor.policy;
 
 import gbox.core;
+import gbox.func_ky;
 
-export namespace executor::policy {
+using func::FnOnce;
+
+export namespace policy {
 
 /// Error definitions for the executor module
 enum class Error : uint8_t {
@@ -22,10 +23,10 @@ using Result = result::Result<T, Error>;
 ///
 /// Typically used on handles to the execution pool to enable sending typed function
 /// pointers to a `ExecutionPool` of a given task type.
-template <class Derived, typename Sig>
+template <class Derived, typename Fn>
 struct Scheduler {
     /// Task definition for this implementation of the `Scheduler` policy
-    using Task = Fn<Sig>;
+    using Task = FnOnce<Fn>;
 
     /// Place a task into the executor, but don't execute said task
     Result<void> schedule(Task task) {
@@ -33,4 +34,4 @@ struct Scheduler {
     }
 };
 
-}  // namespace executor::policy
+}  // namespace policy

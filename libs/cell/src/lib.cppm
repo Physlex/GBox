@@ -1,8 +1,10 @@
+//! This module defines the cell container type, used to specify stack-initialized but
+//! global memory specified memory cells
 module;
 
 #include <atomic>
 
-export module gbox.core:cell;
+export module gbox.cell;
 
 //! This module defines a `Cell` type, which handles operating on memory in static space.
 //!
@@ -17,9 +19,8 @@ export module gbox.core:cell;
 //! They are technically slower to use then raw memory assignments, but that is exactly
 //! the tradeoff we accept for the purposes of safe and robust software.
 
-import :memory;
-import :option;
-import :result;
+import gbox.core;
+import gbox.func_ky;
 
 export namespace cell {
 

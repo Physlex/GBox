@@ -1,5 +1,5 @@
 file(GLOB_RECURSE GBOX_CORE_TEST_SRC "${GBOX_CORE_TEST_PATH}/*.cpp")
 add_tests(
-    SOURCES ${GBOX_CORE_TEST_SRC}
-    LIBRARIES gbox::core
+  SOURCES ${GBOX_CORE_TEST_SRC}
+  LIBRARIES gbox::core
 )

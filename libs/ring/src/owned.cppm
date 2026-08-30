@@ -4,11 +4,11 @@ module;
 #include <cstddef>
 #include <type_traits>
 
-export module gbox.core:ring.owned;
+export module gbox.ring:owned;
 
-import :memory;
-import :result;
-import :ring.policy;
+import gbox.core;
+import gbox.func_ky;
+import :policy;
 
 export namespace ring::owned {
 

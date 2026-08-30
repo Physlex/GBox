@@ -1,0 +1,5 @@
+file(GLOB_RECURSE GBOX_RING_TEST_SRC "${GBOX_RING_TEST_PATH}/*.cpp")
+add_tests(
+  SOURCES ${GBOX_RING_TEST_SRC}
+  LIBRARIES gbox::ring
+)
