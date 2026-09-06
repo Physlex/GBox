@@ -8,7 +8,7 @@ export module gbox.func_ky:convert;
 import :result;
 import :func;
 
-using func::FnOnce;
+using func::OnceFn;
 
 namespace convert {
 
@@ -31,7 +31,7 @@ struct From {
 template <class Derived, typename Fn>
 struct Map {
     /// Converts a Derived type into a type specified by T
-    auto map(FnOnce<Fn> &&f);
+    auto map(OnceFn<Fn> &&f);
 };
 
 }  // namespace convert
