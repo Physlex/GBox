@@ -9,6 +9,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include <utility>
+
 import gbox.core;
 import gbox.func_ky;
 import gbox.runtime;
@@ -34,7 +36,7 @@ int32_t main(int32_t argc, char **argv) {
     auto valid = doubled(21);
     auto erroneous = doubled(-1);
 
-    printf("doubled: %d\n", valid.assume_ok());
+    printf("doubled: %d\n", std::move(valid).assume_ok());
     printf("negative is erroneous: %s\n", erroneous.is_err() ? "yes" : "no");
 
     return 0;

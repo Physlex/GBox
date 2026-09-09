@@ -23,7 +23,7 @@ class OwnedStorage : public memory::MoveOnly, public policy::Ring<OwnedStorage<T
 
   public:
     /// Constructs an empty ringbuffer with capacity C and count 0
-    OwnedStorage() : Base() {}
+    OwnedStorage() : Base(), storage_({}) {}
 
     /// Constructs a ringbuffer with capacity C, and count N, of type T
     ///

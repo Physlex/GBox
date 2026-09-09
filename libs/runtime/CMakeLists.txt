@@ -1,3 +1,3 @@
 gbox_library(runtime)
 
-gbox_dependencies(core func-ky ring)
+gbox_dependencies(core func-ky ring cell)

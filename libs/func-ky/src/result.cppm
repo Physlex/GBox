@@ -2,18 +2,38 @@ module;
 
 //! This module implements result-style error propagation semantics for C++.
 
+#include <cstddef>
 #include <exception>
+#include <type_traits>
 #include <utility>
 #include <variant>
 
 export module gbox.func_ky:result;
 
-export namespace result {
+import :func.once;
+import :traits;
+
+using once::OnceFn;
+using traits::UnionStorable;
+
+namespace result {
 
 /// Alias for the result storage type
 template <typename T, typename E>
 using ResultInner =
     std::variant<std::conditional_t<std::is_void_v<T>, std::monostate, T>, E>;
+
+/// Names what a result is able to hold
+///
+/// A result carrying nothing on success spells its valid side as a monostate, so a void
+/// `T` passes where an option would refuse one. The erroneous side always names a value.
+///
+/// Neither side takes a reference. A variant holds none directly, and unlike an option a
+/// result places what it is given into storage unwrapped.
+template <typename T, typename E>
+concept ResultStorable =
+    (std::is_void_v<T> || (UnionStorable<T> && !std::is_reference_v<T>)) &&
+    (UnionStorable<E> && !std::is_reference_v<E>);
 
 /// Forward declaration of Ok with a default void type parameter, enabling
 /// `Ok()` to be written without explicit template arguments when representing
@@ -23,164 +43,132 @@ using ResultInner =
 /// ```cpp
 /// Result<void, int> res = Ok();
 /// ```
-template <typename T = void>
+export template <typename T = void>
 struct Ok;
 
 /// Deduction guide for the Ok result builder
-template <typename T>
+export template <typename T>
 Ok(T) -> Ok<T>;
 
 /// Proxy-class for a Result which has a valid value
-template <typename T>
+export template <typename T>
 struct Ok {
     T value;
-    explicit Ok(T v) : value(std::move(v)) {}
+
+    /// Adopts the value the result will hold
+    explicit Ok(T v) : value(std::forward<T>(v)) {}
 };
 
 /// Specialization for void-case Ok types
-template <>
+export template <>
 struct Ok<void> {
     Ok() = default;
 };
 
 /// Proxy-class for a Result which has an erroneous value
-template <typename E>
+export template <typename E>
 struct Err {
     E value;
-    explicit Err(E v) : value(std::move(v)) {}
+
+    /// Adopts the value the result will hold
+    explicit Err(E v) : value(std::forward<E>(v)) {}
 };
 
 /// Deduction guide for the Err result builder
-template <typename E>
+export template <typename E>
 Err(E) -> Err<E>;
 
 /// Pseudo-functional result type, for error propagation without needing to use the cpp
 /// expected type
-template <typename T, typename E>
+export template <typename T, typename E>
+    requires ResultStorable<T, E>
 class Result {
   public:
     /// Constructs a Result from an Ok value
     Result(Ok<T> &&o)
         requires(!std::is_void_v<T>)
-        : inner_(std::in_place_index<0>, std::move(o).value) {};
+        : inner_(std::in_place_index<OK_INDEX>, std::move(o).value) {};
 
     /// Constructs a Result from an Ok value carrying nothing
     Result(const Ok<T> &_o)
         requires(std::is_void_v<T>)
-        : inner_(std::in_place_index<0>) {};
+        : inner_(std::in_place_index<OK_INDEX>) {};
 
     /// Constructs a Result from an erroneous value
-    Result(Err<E> &&e) : inner_(std::in_place_index<1>, std::move(e).value) {};
+    Result(Err<E> &&e) : inner_(std::in_place_index<ERR_INDEX>, std::move(e).value) {};
 
-    /// Transform the option type from type Result<T> to type Result<U>, where U is the
-    /// return type of the entered lambda Fn
+    /// Transform the result type from type Result<T, E> to type Result<U, E>, where U is
+    /// the return type of the owned callable
     ///
-    /// Maps the results inner type to a type specified by the lambda. Expects tha the
-    /// result type is `Ok`. If it is instead `Err`, then return early as the `Err` type.
-    template <typename Fn>
-    auto map(Fn &&f) -> Result<decltype(f(std::declval<T>())), E> {
+    /// Spends the result and the callable together, handing the valid value over to be
+    /// transformed. If the result is erroneous, then return early as the `Err` type,
+    /// leaving the callable uninvoked. A result carrying nothing on success has no value
+    /// to transform, and so has no map at all.
+    template <typename F>
+        requires(!std::is_void_v<T>)
+    auto map(OnceFn<F> f) && -> Result<std::invoke_result_t<OnceFn<F>, T>, E> {
+        using Mapped = std::invoke_result_t<OnceFn<F>, T>;
+
+        [[unlikely]]
         if (this->is_err()) {
-            return Err(std::get<E>(this->inner_));
+            return Err<E>(std::forward<E>(std::get<ERR_INDEX>(this->inner_)));
         }
 
-        return Ok(std::forward<Fn>(f)(std::get<T>(this->inner_)));
+        return Ok<Mapped>(
+            std::move(f)(std::forward<T>(std::get<OK_INDEX>(this->inner_)))
+        );
     }
 
-    /// Returns the valid value. Terminates if the result is erroneous
+    /// Returns the valid value, spending the result it is called on
+    ///
+    /// ## Error
+    /// If the result is erroneous, then the program will abort.
     [[nodiscard]]
-    T assume_ok() noexcept {
-        if constexpr (std::is_void_v<T>) {
-            if (!std::holds_alternative<std::monostate>(this->inner_)) {
-                std::terminate();
-            }
-
-            return;
-        } else {
-            auto *ok = std::get_if<T>(&this->inner_);
-            if (ok == nullptr) {
-                std::terminate();
-            }
-
-            return std::move(*ok);
-        }
-    }
-
-    /// Returns the erroneous value. Terminates if the result is valid
-    [[nodiscard]]
-    E assume_err() noexcept {
-        auto *err = std::get_if<E>(&this->inner_);
-        if (err == nullptr) {
+    T assume_ok() && noexcept(
+        std::is_void_v<T> || std::is_nothrow_move_constructible_v<T>
+    ) {
+        [[unlikely]]
+        if (this->is_err()) {
             std::terminate();
         }
 
-        return *err;
-    }
-
-    /// Returns a reference to the underlying variant storage
-    [[nodiscard]]
-    ResultInner<T, E> &inner() {
-        return this->inner_;
-    }
-
-    /// Returns true if the result holds an erroneous value
-    bool is_err() { return std::holds_alternative<E>(this->inner_); }
-
-    /// Returns true if the result holds a valid value
-    bool is_ok() {
         if constexpr (std::is_void_v<T>) {
-            return std::holds_alternative<std::monostate>(this->inner_);
+            return;
         } else {
-            return std::holds_alternative<T>(this->inner_);
+            return std::forward<T>(std::get<OK_INDEX>(this->inner_));
         }
     }
 
+    /// Returns the erroneous value, spending the result it is called on
+    ///
+    /// ## Error
+    /// If the result is valid, then the program will abort.
+    [[nodiscard]]
+    E assume_err() && noexcept(std::is_nothrow_move_constructible_v<E>) {
+        [[unlikely]]
+        if (this->is_ok()) {
+            std::terminate();
+        }
+
+        return std::forward<E>(std::get<ERR_INDEX>(this->inner_));
+    }
+
+    /// Returns true if the result holds an erroneous value
+    [[nodiscard]] bool is_err() const noexcept {
+        return this->inner_.index() == ERR_INDEX;
+    }
+
+    /// Returns true if the result holds a valid value
+    [[nodiscard]] bool is_ok() const noexcept { return this->inner_.index() == OK_INDEX; }
+
   private:
+    /// The alternative the storage keeps a valid value in
+    static constexpr std::size_t OK_INDEX = 0;
+
+    /// The alternative the storage keeps an erroneous value in
+    static constexpr std::size_t ERR_INDEX = 1;
+
     ResultInner<T, E> inner_;
 };
-
-// FIXME: Remove the dispatch-based result type once we get the opportunity to make a
-// better ADT
-
-/// Standard "overloaded" type definition. Forces the "visit" method to use all possible
-/// variants...
-///
-/// Effectively creates an anonymous struct of match arms (anything that defines the ()
-/// operator, really)
-///
-/// When used in conjunction with "visit", the compiler will require every possible option
-/// to exist for the struct to be considered "good".
-template <class... Match>
-struct overloaded : Match... {
-    using Match::operator()...;
-};
-template <class... Match>
-overloaded(Match...) -> overloaded<Match...>;
-
-/// This function attempts to make generic type handling something more bearable
-///
-/// Does some template magic to pack a set of match arm callbacks (which are type defined
-/// as a list of lambda callbacks using the overload struct magic above) into a single
-/// "forwarded" lambda.
-///
-/// Simpler terms, it allows matching against an std::variant and forces the user to
-/// define a match arm for every possible variant that the sum type defines.
-template <typename AbstractSumType, typename... Matches>
-auto match(AbstractSumType &&variant, Matches &&...matches) {
-    return std::visit(
-        overloaded{std::forward<Matches>(matches)...},
-        std::forward<AbstractSumType>(variant)
-    );
-}
-
-/// Experimental. Match specialization for a result type, which forces an "Err" and "Ok"
-/// match arm
-template <typename T, typename E, typename OkMatch, typename ErrMatch>
-auto match_result(Result<T, E> &&res, OkMatch &&ok_match, ErrMatch &&err_match) {
-    return match(
-        std::move(std::move(res).inner()),
-        [&](T &&val) { return std::forward<OkMatch>(ok_match)(Ok<T>{std::move(val)}); },
-        [&](E &&err) { return std::forward<ErrMatch>(err_match)(Err<E>{std::move(err)}); }
-    );
-}
 
 }  // namespace result

@@ -4,6 +4,7 @@
 
 #include <probe.hpp>
 #include <type_traits>
+#include <utility>
 
 import gbox.cell;
 
@@ -32,7 +33,7 @@ TEST(cellInitOnce, cellTests) {
     auto claim = slot.init(Probe(CLAIMED_ID));
     ASSERT_TRUE(claim.is_ok());
 
-    auto ref = claim.assume_ok();
+    auto ref = std::move(claim).assume_ok();
     ASSERT_EQ(CLAIMED_ID, ref.get().value);
 }
 
@@ -45,7 +46,7 @@ TEST(cellInitLocked, cellTests) {
 
     auto second = slot.init(Probe(2));
     ASSERT_TRUE(second.is_err());
-    ASSERT_EQ(cell::Error::Locked, second.assume_err());
+    ASSERT_EQ(cell::Error::Locked, std::move(second).assume_err());
 }
 
 /// Verify a refused claim leaves the value the cell already holds untouched

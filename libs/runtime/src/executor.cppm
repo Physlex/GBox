@@ -7,10 +7,14 @@ export module gbox.runtime:executor;
 
 import gbox.func_ky;
 import gbox.ring;
+import gbox.cell;
 
 using func::Thunk;
 using option::Option;
+using result::Err;
+using result::Ok;
 using ring::RingBuffer;
+using static_ref::StaticRef;
 
 /// Copy/Cloneable error type for the executor class
 class Error {
@@ -38,6 +42,13 @@ using Result = result::Result<T, Error>;
 /// Generic move-only callable which returns nothing.
 using Task = Thunk<void>;
 
+/// Number of tasks that can exist in the executor pool. When we eventually build the
+/// executor backend this will likely be configured through a constexpr.
+///
+/// ## TODO:
+/// Is there a point in making this configurable later on?
+static const size_t POOL_CAP = 1024;
+
 /// Task executor for the RTOS
 ///
 /// ## Note
@@ -50,8 +61,7 @@ using Task = Thunk<void>;
 ///
 class Executor {
   public:
-    Executor()
-        : _pool(/** Construct a ringbuffer here, can we do it with a constexpr? */) {}
+    Executor() : _pool(RingBuffer<Option<Task>, POOL_CAP>()) {}
 
     /// Immediately enqueue and run the task directly
     ///
@@ -63,18 +73,15 @@ class Executor {
     /// nearly the equivalent of invoking the function directly.
     static void run_once(Task &&task) { std::move(task)(); }
 
-    Result<void> enqueue(Task &&task) const {
+    Result<void> enqueue(Task &&task) {
         auto res = this->pool_.push(std::move(task));
         if (res.is_err()) {
-            return result::Err(Error::Internal);
+            return Err(Error::Internal);
         }
     }
 
   private:
-    // TODO: Is there a point in making this configurable later on?
-    static const size_t POOL_CAP = 1024;
-
-    RingBuffer<Option<Task &&>, POOL_CAP> pool_;
+    RingBuffer<Option<Task>, POOL_CAP> pool_;
 };
 
 /// Spawn source handler
@@ -82,8 +89,8 @@ class Executor {
 /// Uses an internal static reference to the executor deriving this source
 class SpawnSource {
   public:
-    SpawnSource make(StaticRef<Executor> executor_ref) {
-        return SpawnSource(std::move(executor_ref));
+    static SpawnSource make(StaticRef<Executor> executor_ref) {
+        return SpawnSource(std::forward<StaticRef<Executor>>(executor_ref));
     }
 
     /// Spawn a task and enqueue it to the executor
@@ -91,9 +98,10 @@ class SpawnSource {
     /// ## Error
     /// If the executor fails to enqueue, then we return an `Internal` error.
     Result<void> spawn(Task &&task) {
-        auto res = this->executor_ref_.enqueue(std::move(task));
-        if res
-            .is_err() { return result::Err(Error::Internal); }
+        auto res = this->executor_ref_->enqueue(std::move(task));
+        if (res.is_err()) {
+            return Err(Error::Internal);
+        }
 
         return Ok<void>();
     };
