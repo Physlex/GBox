@@ -58,7 +58,7 @@ class Option {
     ///
     /// ## Error
     /// Assumes the inner type is `Some`, if not, aborts.
-    T &&take() {
+    T &&take() noexcept {
         [[unlikely]]
         if (!this->is_some()) {
             std::terminate();
@@ -80,6 +80,39 @@ class Option {
         }
 
         return this->inner_;
+    }
+
+    /// Borrows the contained value mutably, leaving it in the option
+    ///
+    /// Use this over `assume_some` whenever the address of the contained value matters,
+    /// such as when a reference to it outlives the call.
+    ///
+    /// ## Error
+    /// If the option type is actually a `None` type, then the program will abort.
+    T &as_mut() noexcept {
+        auto *some = std::get_if<T>(&this->inner_);
+
+        [[unlikely]]
+        if (some == nullptr) {
+            std::terminate();
+        }
+
+        return *some;
+    }
+
+    /// Borrows the contained value, leaving it in the option
+    ///
+    /// ## Error
+    /// If the option type is actually a `None` type, then the program will abort.
+    const T &as_ref() const noexcept {
+        const auto *some = std::get_if<T>(&this->inner_);
+
+        [[unlikely]]
+        if (some == nullptr) {
+            std::terminate();
+        }
+
+        return *some;
     }
 
     /// Assume that the option type holds nothing

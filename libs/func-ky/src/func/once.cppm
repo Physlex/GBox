@@ -45,7 +45,7 @@ class OnceFn : public MoveOnly {
     /// auto total = std::move(chain)(2);
     /// ```
     template <typename... Args>
-    [[nodiscard]] constexpr auto bind(Args &&...args) && {
+    [[nodiscard]] constexpr auto partial(Args &&...args) && {
         return Partial<OnceFn, std::decay_t<Args>...>(
             std::move(*this), std::forward<Args>(args)...
         );

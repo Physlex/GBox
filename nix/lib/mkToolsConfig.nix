@@ -27,6 +27,7 @@ let
       -cppcoreguidelines-pro-type-vararg,
       -cppcoreguidelines-pro-bounds-pointer-arithmetic,
       -cppcoreguidelines-pro-type-union-access,
+      -cppcoreguidelines-special-member-functions,
       -readability-redundant-declaration
 
     CheckOptions:

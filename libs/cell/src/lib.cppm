@@ -1,79 +1,38 @@
-//! This module defines the cell container type, used to specify stack-initialized but
-//! global memory specified memory cells
-module;
-
-#include <atomic>
-
-export module gbox.cell;
-
-//! This module defines a `Cell` type, which handles operating on memory in static space.
+//! This module defines the cell container types, used to specify stack-initialized but
+//! globally specified memory cells.
 //!
-//! Ideally, this make it simpler to determine when memory is being managed for static
-//! memory systems, such as the executor.
-//!
-//! ## Note
 //! A good way to think about cells in general are that they act like a kind of "slot" for
-//! memory of a specified size, and contain metadata about whether that slot is being
-//! used at all for analysis by both the compiler and runtime.
+//! memory of a specified size, and contain metadata about whether that slot is being used
+//! at all for analysis by both the compiler and runtime.
 //!
 //! They are technically slower to use then raw memory assignments, but that is exactly
 //! the tradeoff we accept for the purposes of safe and robust software.
+//!
+//! ## Warning
+//! `StaticCell` is the entry point to this module. A `Static` is storage which never
+//! destroys what it holds, and constructing one directly is discouraged: on its own it
+//! suppresses destruction without granting the lifetime that makes suppression safe, so a
+//! `Static` built on the stack abandons its value when the frame goes away, leaking it
+//! rather than keeping it alive.
+//!
+//! A cell holds that storage for as long as it lives and hands back a `StaticRef` to the
+//! value it settled, which is what turns suppression into a lifetime the compiler can
+//! audit. Reach for a cell, and take the reference it gives you.
 
-import gbox.core;
-import gbox.func_ky;
+export module gbox.cell;
+
+export import :static_cell;
+export import :static_ref;
+export import :static_t;
 
 export namespace cell {
 
-using option::None;
-using option::Option;
-using option::Some;
-
-using result::Err;
-using result::Ok;
-
-/// Error definitions for the cell module
-enum class Error : uint8_t {
-    /// Despite memory being allocated for the cell's inner-type, the cell hasn't yet
-    /// received data to fill the type.
-    Empty,
-
-    /// The cell has been previously initialized, and cannot be re-initialized
-    Locked
-};
+using static_cell::Error;
+using static_cell::StaticCell;
+using static_ref::StaticRef;
+using static_t::Static;
 
 template <typename T>
-using Result = result::Result<T, Error>;
-
-/// Defines a standard way of operating in static memory
-template <typename T>
-class StaticCell : public memory::Pinned {
-  public:
-    /// Constructs an unlocked `StaticCell`
-    StaticCell() : inner_(None()) {};
-
-    /// Initializes the cell exactly once
-    ///
-    /// If a cell is expected to have the same memory be re-allocated, prefer to "swap"
-    /// the memory instead.
-    ///
-    /// ## Error
-    /// If a cell has been initialized prior, then it is locked, and cannot be
-    /// re-initialized.
-    [[nodiscard]]
-    Result<T &> init(T &&value) {
-        [[unlikely]]
-        if (this->inner_.is_some()) {
-            return Err(Error::Locked);
-        }
-
-        this->inner_ = Some(std::move(value));
-        return Ok(&this->inner_.assume_some());
-    }
-
-  private:
-    // Atomic, meaning (ideally) safe across concurrency primitives at a basic level.
-    // For true thread-safety, one would wrap this static cell type in a mutex.
-    std::atomic<Option<T &&>> inner_;
-};
+using Result = static_cell::Result<T>;
 
 }  // namespace cell
