@@ -8,7 +8,7 @@
 
 import gbox.func_ky;
 
-using func::make_once;
+using func::OnceFn;
 using option::None;
 using option::Option;
 using option::Some;
@@ -28,7 +28,7 @@ constexpr int HELD = 42;
 TEST(optionMapSpends, optionOnceTests) {
     Option<int> opt = Some(HELD);
 
-    Option<int> mapped = std::move(opt).map(make_once([](int held) { return held + 1; }));
+    Option<int> mapped = std::move(opt).map(OnceFn([](int held) { return held + 1; }));
 
     ASSERT_EQ(HELD + 1, mapped.as_ref());
 }
@@ -37,7 +37,7 @@ TEST(optionMapSpends, optionOnceTests) {
 TEST(optionMapBorrows, optionOnceTests) {
     Option<int> opt = Some(HELD);
 
-    Option<int> mapped = opt.map(make_once([](const int &held) { return held + 1; }));
+    Option<int> mapped = opt.map(OnceFn([](const int &held) { return held + 1; }));
 
     ASSERT_EQ(HELD + 1, mapped.as_ref());
     ASSERT_TRUE(opt.is_some());
@@ -49,7 +49,7 @@ TEST(optionMapChangesType, optionOnceTests) {
     Option<int> opt = Some(HELD);
 
     Option<bool> mapped =
-        std::move(opt).map(make_once([](int held) { return held == HELD; }));
+        std::move(opt).map(OnceFn([](int held) { return held == HELD; }));
 
     ASSERT_TRUE(mapped.as_ref());
 }
@@ -59,7 +59,7 @@ TEST(optionMapNoneSkipsCallable, optionOnceTests) {
     Option<int> opt = None();
     bool invoked = false;
 
-    Option<int> mapped = std::move(opt).map(make_once([&invoked](int held) {
+    Option<int> mapped = std::move(opt).map(OnceFn([&invoked](int held) {
         invoked = true;
         return held;
     }));
@@ -72,7 +72,7 @@ TEST(optionMapNoneSkipsCallable, optionOnceTests) {
 TEST(optionMapMoveOnly, optionOnceTests) {
     Option<Owned> opt = Some(std::make_unique<int>(HELD));
 
-    Option<int> mapped = std::move(opt).map(make_once([](Owned held) { return *held; }));
+    Option<int> mapped = std::move(opt).map(OnceFn([](Owned held) { return *held; }));
 
     ASSERT_EQ(HELD, mapped.as_ref());
 }

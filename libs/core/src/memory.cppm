@@ -14,6 +14,7 @@ export module gbox.core:memory;
 
 export namespace memory {
 
+template <typename Self>
 class MoveOnly {
   protected:
     MoveOnly() = default;
@@ -24,6 +25,7 @@ class MoveOnly {
     MoveOnly &operator=(const MoveOnly &) = delete;
 };
 
+template <typename Self>
 class Pinned {
   protected:
     Pinned() = default;

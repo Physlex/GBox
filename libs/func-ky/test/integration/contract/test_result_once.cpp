@@ -8,7 +8,7 @@
 
 import gbox.func_ky;
 
-using func::make_once;
+using func::OnceFn;
 using result::Err;
 using result::Ok;
 
@@ -33,7 +33,7 @@ TEST(resultMapSpends, resultOnceTests) {
     Result<int32_t> res = Ok(HELD);
 
     Result<int32_t> mapped =
-        std::move(res).map(make_once([](int32_t held) { return held + 1; }));
+        std::move(res).map(OnceFn([](int32_t held) { return held + 1; }));
 
     ASSERT_TRUE(mapped.is_ok());
     ASSERT_EQ(HELD + 1, std::move(mapped).assume_ok());
@@ -44,7 +44,7 @@ TEST(resultMapChangesType, resultOnceTests) {
     Result<int32_t> res = Ok(HELD);
 
     Result<bool> mapped =
-        std::move(res).map(make_once([](int32_t held) { return held == HELD; }));
+        std::move(res).map(OnceFn([](int32_t held) { return held == HELD; }));
 
     ASSERT_TRUE(std::move(mapped).assume_ok());
 }
@@ -54,7 +54,7 @@ TEST(resultMapErrSkipsCallable, resultOnceTests) {
     Result<int32_t> res = Err(ErrorKind::Any);
     bool invoked = false;
 
-    Result<int32_t> mapped = std::move(res).map(make_once([&invoked](int32_t held) {
+    Result<int32_t> mapped = std::move(res).map(OnceFn([&invoked](int32_t held) {
         invoked = true;
         return held;
     }));
@@ -68,8 +68,7 @@ TEST(resultMapErrSkipsCallable, resultOnceTests) {
 TEST(resultMapMoveOnly, resultOnceTests) {
     Result<Owned> res = Ok(std::make_unique<int32_t>(HELD));
 
-    Result<int32_t> mapped =
-        std::move(res).map(make_once([](Owned held) { return *held; }));
+    Result<int32_t> mapped = std::move(res).map(OnceFn([](Owned held) { return *held; }));
 
     ASSERT_EQ(HELD, std::move(mapped).assume_ok());
 }
@@ -79,7 +78,7 @@ TEST(resultMapMoveOnlyErr, resultOnceTests) {
     result::Result<int32_t, Owned> res = Err(std::make_unique<int32_t>(HELD));
 
     result::Result<int32_t, Owned> mapped =
-        std::move(res).map(make_once([](int32_t held) { return held + 1; }));
+        std::move(res).map(OnceFn([](int32_t held) { return held + 1; }));
 
     ASSERT_TRUE(mapped.is_err());
     ASSERT_EQ(HELD, *std::move(mapped).assume_err());

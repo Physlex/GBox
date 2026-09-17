@@ -9,6 +9,7 @@ module;
 //! produces another layer, and `operator()` only ever invokes.
 
 #include <concepts>
+#include <functional>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -24,24 +25,24 @@ export namespace partial {
 /// One stage of a partial application, holding the previous stage together with the
 /// arguments bound at this one.
 ///
-/// `F` is whatever the previous stage produced, either the once-callable that began the
+/// `C` is whatever the previous stage produced, either the once-callable that began the
 /// chain or the layer beneath this one. `Bound` are the arguments supplied to the `bind`
 /// that created this layer.
 ///
 /// # Example
 /// ```cpp
-/// auto chain = make_once([](int a, int b) { return a + b; }).bind(1).bind(2);
+/// auto chain = OnceFn([](int a, int b) { return a + b; }).bind(1).bind(2);
 /// // Partial<Partial<OnceFn<C>, int>, int>
 /// ```
-template <typename F, typename... Bound>
-class Partial : public MoveOnly {
+template <typename C, typename... Bound>
+class Partial : public For<Partial<C, Bound...>, Where<MoveOnly<Self>>> {
   public:
     /// Constructs a layer over the previous stage of the chain.
     ///
     /// Reached through `bind` rather than written directly; a chain names a closure
     /// type, so its own type cannot be spelled at a call site.
-    constexpr Partial(F &&f, std::decay_t<Bound>... args)
-        : f_(std::move(f)), args_(std::move(args)...) {}
+    constexpr Partial(C &&f, std::decay_t<Bound>... args)
+        : closure_(std::move(f)), args_(std::move(args)...) {}
 
     /// Supplies further arguments, producing a layer that owns them.
     ///
@@ -50,13 +51,19 @@ class Partial : public MoveOnly {
     ///
     /// # Example
     /// ```cpp
-    /// auto chain = make_once([](int a, int b) { return a + b; }).bind(1).bind(2);
+    /// auto chain = OnceFn([](int a, int b) { return a + b; }).bind(1).bind(2);
     /// ```
-    template <typename... New>
-    [[nodiscard]] constexpr auto bind(New &&...args) && {
-        return Partial<Partial, std::decay_t<New>...>(
-            std::move(*this), std::forward<New>(args)...
+    template <typename... Args>
+    [[nodiscard]] constexpr auto partial(Args &&...args) && {
+        return Partial<Partial, std::decay_t<Args>...>(
+            std::move(*this), std::forward<Args>(args)...
         );
+    }
+
+    [[nodiscard]] constexpr auto thunk() &&
+        requires std::invocable<C>
+    {
+        return Thunk([this]() { std::bind(this->closure_, this->args_); });
     }
 
     /// Consumes the chain, invoking the wrapped callable with every bound argument.
@@ -73,15 +80,15 @@ class Partial : public MoveOnly {
     /// ```cpp
     /// auto sum = [](int a, int b, int c) { return a + b + c; };
     ///
-    /// make_once(sum).bind(1).bind(2).bind(3)();   // 6
-    /// make_once(sum).bind(1, 2)(3);               // 6, last argument given at the call
+    /// OnceFn(sum).bind(1).bind(2).bind(3)();   // 6
+    /// OnceFn(sum).bind(1, 2)(3);               // 6, last argument given at the call
     /// ```
     template <typename... Extra>
-        requires std::invocable<F, std::decay_t<Bound>..., Extra...>
+        requires std::invocable<C, std::decay_t<Bound>..., Extra...>
     constexpr decltype(auto) operator()(Extra &&...extra) && {
         return std::apply(
             [&](auto &&...bound) -> decltype(auto) {
-                return std::move(this->f_)(
+                return std::move(this->closure_)(
                     std::forward<decltype(bound)>(bound)..., std::forward<Extra>(extra)...
                 );
             },
@@ -90,7 +97,7 @@ class Partial : public MoveOnly {
     }
 
   private:
-    [[no_unique_address]] F f_;
+    [[no_unique_address]] C closure_;
     [[no_unique_address]] std::tuple<std::decay_t<Bound>...> args_;
 };
 

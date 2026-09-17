@@ -43,7 +43,7 @@ concept DrainableFromRvalue = requires(Result<T> res) { std::move(res).assume_ok
 /// Whether a result carrying nothing on success offers a map
 template <typename T>
 concept Mappable = requires(Result<T> res) {
-    std::move(res).map(func::make_once([](int32_t held) { return held; }));
+    std::move(res).map(func::OnceFn([](int32_t held) { return held; }));
 };
 
 }  // namespace

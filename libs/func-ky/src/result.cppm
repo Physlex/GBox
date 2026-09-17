@@ -13,7 +13,7 @@ export module gbox.func_ky:result;
 import :func.once;
 import :traits;
 
-using once::OnceFn;
+using once_fn::OnceFn;
 using traits::UnionStorable;
 
 namespace result {

@@ -52,7 +52,7 @@ using Result = result::Result<T, Error>;
 /// ref->tick();
 /// ```
 template <typename T>
-class StaticCell final : public Pinned {
+class StaticCell final : public For<StaticCell<T>, Where<Pinned<Self>>> {
   public:
     /// Makes a cell and borrows it
     ///

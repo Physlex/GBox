@@ -29,7 +29,7 @@ export namespace static_t {
 /// ref->tick();
 /// ```
 template <typename T>
-class Static final : public MoveOnly {
+class Static final : public For<Static<T>, Where<MoveOnly<Self>>> {
   public:
     /// Constructs the value in place from the arguments given
     template <typename... Args>

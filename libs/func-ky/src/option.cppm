@@ -4,7 +4,6 @@ module;
 //! compiler
 
 #include <exception>
-#include <functional>
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -14,7 +13,7 @@ export module gbox.func_ky:option;
 import :func.once;
 import :traits;
 
-using once::OnceFn;
+using once_fn::OnceFn;
 using traits::Stored;
 using traits::UnionStorable;
 
@@ -179,7 +178,7 @@ class Option {
     /// If the option holds nothing, then the program will abort.
     template <typename Self>
     decltype(auto) held(this Self &&self) noexcept {
-        auto *stored = std::get_if<Stored<T>>(&self.inner_);
+        auto *stored = std::get_if<Stored<T>>(&std::forward<Self>(self).inner_);
 
         [[unlikely]]
         if (stored == nullptr) {

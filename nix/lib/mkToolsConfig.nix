@@ -28,7 +28,8 @@ let
       -cppcoreguidelines-pro-bounds-pointer-arithmetic,
       -cppcoreguidelines-pro-type-union-access,
       -cppcoreguidelines-special-member-functions,
-      -readability-redundant-declaration
+      -readability-redundant-declaration,
+      -cppcoreguidelines-non-private-member-variables-in-classes,
 
     CheckOptions:
       readability-identifier-length.MinimumVariableNameLength: 2

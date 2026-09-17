@@ -31,7 +31,7 @@ export namespace static_ref {
 /// ref->tick();
 /// ```
 template <typename T>
-class StaticRef final : public MoveOnly {
+class StaticRef final : public For<StaticRef<T>, Where<MoveOnly<Self>>> {
   public:
     /// Points the reference at the value a `Static` holds
     explicit StaticRef(Static<T> &leaked) : ptr_(&leaked.get()) {}

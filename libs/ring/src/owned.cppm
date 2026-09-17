@@ -12,18 +12,20 @@ import :policy;
 
 export namespace ring::owned {
 
+using memory::MoveOnly;
+using policy::Ring;
 using result::Err;
 using result::Ok;
 
 /// Partial specialization of the RingStorage type into a capacity holding type
 template <typename T, std::size_t C>
-class OwnedStorage : public memory::MoveOnly, public policy::Ring<OwnedStorage<T, C>, T> {
+class OwnedStorage
+    : public For<OwnedStorage<T, C>, Where<MoveOnly<Self>, Ring<Self, T>>> {
     static_assert(C > 0, "Capacity must be greater than zero!");
-    using Base = policy::Ring<OwnedStorage<T, C>, T>;
 
   public:
     /// Constructs an empty ringbuffer with capacity C and count 0
-    OwnedStorage() : Base(), storage_({}) {}
+    OwnedStorage() : storage_({}) {}
 
     /// Constructs a ringbuffer with capacity C, and count N, of type T
     ///
@@ -37,7 +39,7 @@ class OwnedStorage : public memory::MoveOnly, public policy::Ring<OwnedStorage<T
     /// a compilation error.
     template <typename... Args>
         requires(std::is_convertible_v<Args, T> && ...)
-    OwnedStorage(Args... args) : Base() {
+    OwnedStorage(Args... args) {
         static_assert(
             sizeof...(Args) <= C,
             "Ringbuffer cannot be populated with an initializer list of capacity greater "
