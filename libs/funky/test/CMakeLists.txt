@@ -1,0 +1,5 @@
+file(GLOB_RECURSE GBOX_FUNKY_TEST_SRC "${GBOX_FUNKY_TEST_PATH}/*.cpp")
+add_tests(
+  SOURCES ${GBOX_FUNKY_TEST_SRC}
+  LIBRARIES gbox::funky
+)

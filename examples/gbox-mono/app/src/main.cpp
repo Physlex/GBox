@@ -12,7 +12,7 @@
 #include <utility>
 
 import gbox.core;
-import gbox.func_ky;
+import gbox.funky;
 import gbox.runtime;
 
 using result::Result;

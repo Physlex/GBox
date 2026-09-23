@@ -7,4 +7,4 @@ gbox_import(clang
   LINK clangAST clangTooling clangBasic clangFrontend
 )
 
-gbox_dependencies(core func-ky)
+gbox_dependencies(core funky)

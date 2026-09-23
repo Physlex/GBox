@@ -5,7 +5,7 @@ module;
 #include <functional>
 #include <type_traits>
 
-export module gbox.func_ky:traits;
+export module gbox.funky.adt:traits;
 
 export namespace traits {
 

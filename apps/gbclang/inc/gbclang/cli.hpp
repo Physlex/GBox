@@ -9,7 +9,7 @@
 
 #include <string>
 
-import gbox.func_ky;
+import gbox.funky;
 using result::Result;
 
 using namespace result;

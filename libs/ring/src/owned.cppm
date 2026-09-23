@@ -7,7 +7,7 @@ module;
 export module gbox.ring:owned;
 
 import gbox.core;
-import gbox.func_ky;
+import gbox.funky;
 import :policy;
 
 export namespace ring::owned {

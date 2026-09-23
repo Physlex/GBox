@@ -14,14 +14,9 @@ module;
 #include <concepts>
 #include <utility>
 
-export module gbox.func_ky:func.thunk;
+export module gbox.funky.fn:thunk;
 
 import gbox.core;
-
-import :option;
-
-using option::None;
-using option::Option;
 
 export namespace thunk {
 

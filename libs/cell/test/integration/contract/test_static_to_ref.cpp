@@ -7,7 +7,7 @@
 #include <probe.hpp>
 
 import gbox.cell;
-import gbox.func_ky;
+import gbox.funky;
 
 namespace {
 

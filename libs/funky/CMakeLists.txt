@@ -1,3 +1,3 @@
-gbox_library(func-ky)
+gbox_library(funky)
 
 gbox_dependencies(core)

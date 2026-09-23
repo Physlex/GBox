@@ -2,9 +2,9 @@
 
 #include <gtest/gtest.h>
 
-import gbox.func_ky;
+import gbox.funky;
 
-using func::Thunk;
+using fn::Thunk;
 
 namespace {
 /// Assert that it's impossible to construct a null thunk, thunks are always safe

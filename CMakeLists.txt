@@ -39,7 +39,7 @@ include(${PROJECT_CONF_PATH}/AddLibrary.cmake)
 # Workspace module libraries
 
 gbox_module(GBOX_CORE "${PROJECT_SOURCE_DIR}/libs/core")
-gbox_module(GBOX_FUNC-KY "${PROJECT_SOURCE_DIR}/libs/func-ky")
+gbox_module(GBOX_FUNKY "${PROJECT_SOURCE_DIR}/libs/funky")
 
 gbox_module(GBOX_CELL "${PROJECT_SOURCE_DIR}/libs/cell")
 gbox_module(GBOX_RING "${PROJECT_SOURCE_DIR}/libs/ring")

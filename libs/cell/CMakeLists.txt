@@ -1,3 +1,3 @@
 gbox_library(cell)
 
-gbox_dependencies(func-ky core)
+gbox_dependencies(funky core)

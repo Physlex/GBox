@@ -5,7 +5,7 @@ module;
 #include <utility>
 
 export module gbox.ring:policy;
-import gbox.func_ky;
+import gbox.funky;
 
 using result::Result;
 

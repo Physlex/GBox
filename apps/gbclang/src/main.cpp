@@ -28,7 +28,7 @@
 #include <vector>
 
 #include "gbclang/cli.hpp"
-import gbox.func_ky;
+import gbox.funky;
 #include "gbox/proc/action.hpp"
 
 using namespace gbox;

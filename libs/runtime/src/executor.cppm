@@ -5,11 +5,11 @@ module;
 
 export module gbox.runtime:executor;
 
-// import gbox.func_ky;
+// import gbox.funky;
 // import gbox.ring;
 // import gbox.cell;
 
-// using func::Thunk;
+// using fn::Thunk;
 // using option::Option;
 // using result::Err;
 // using result::Ok;

@@ -6,7 +6,7 @@
 #include <type_traits>
 #include <utility>
 
-import gbox.func_ky;
+import gbox.funky;
 
 using option::None;
 using option::Option;

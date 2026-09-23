@@ -8,9 +8,9 @@ module;
 #include <utility>
 #include <variant>
 
-export module gbox.func_ky:option;
+export module gbox.funky.adt:option;
 
-import :func.once;
+import gbox.funky.fn;
 import :traits;
 
 using once_fn::OnceFn;

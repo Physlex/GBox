@@ -6,9 +6,9 @@
 #include <memory>
 #include <utility>
 
-import gbox.func_ky;
+import gbox.funky;
 
-using func::OnceFn;
+using fn::OnceFn;
 using option::None;
 using option::Option;
 using option::Some;

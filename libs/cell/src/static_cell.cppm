@@ -21,7 +21,7 @@ import :static_ref;
 import :static_t;
 
 import gbox.core;
-import gbox.func_ky;
+import gbox.funky;
 
 using memory::Pinned;
 using option::None;

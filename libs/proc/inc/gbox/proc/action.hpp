@@ -8,7 +8,7 @@
 #include <string>
 #include <unordered_map>
 
-import gbox.func_ky;
+import gbox.funky;
 // TODO: Probably should condense this into the current module instead of keeping seperate
 #include "gbox/proc/action/plugins.hpp"
 
