@@ -18,10 +18,12 @@ import gbox.core;
 
 import :chain.traits;
 import :lazy.traits;
-import :thunk;
+import :partial.traits;
+import :yield.thunk;
 
 using chain::traits::Chainable;
-using thunk::Thunk;
+using partial::traits::Bindable;
+using yield::thunk::Thunk;
 
 namespace lazy {
 
@@ -33,14 +35,14 @@ namespace lazy {
 ///
 /// It's also the only way to ensure the underlying type is thunk-able.
 export template <typename F>
-class Lazy : public For<Lazy<F>, Where<Chainable<Self>>> {
+class Lazy : public For<Lazy<F>, Where<Chainable<Self>, Bindable<Self>>> {
   public:
     constexpr Lazy(F f) : f_(std::forward<F>(f)) {}
 
     /// Consumes the `Lazy` type and thunks it, erasing the associated type and forwarding
     /// the return type of the underlying storage type.
     template <typename... Args>
-    auto operator()(Args... args) &&
+    constexpr auto operator()(Args... args) &&
         requires(std::invocable<F, Args...>)
     {
         using R = std::invoke_result_t<F, Args...>;
@@ -50,14 +52,17 @@ class Lazy : public For<Lazy<F>, Where<Chainable<Self>>> {
             return std::invoke(std::move(fn), std::move(args)...);
         };
 
-        return Thunk<R>(decorator);
+        return Thunk<decltype(decorator), R>(std::move(decorator));
     }
 
-    /// Removes the lazyness attribute and returns the inner type
-    auto strip() &&
-        requires(!std::invocable<F>)
+    /// Removes the lazyness attribute, handing over the inner callable
+    constexpr F strip() && { return std::move(this->f_); }
+
+    /// Removes the lazyness attribute, copying the inner callable
+    constexpr F strip() const &
+        requires std::copy_constructible<F>
     {
-        return std::move(this->f_);
+        return this->f_;
     }
 
   private:
@@ -74,7 +79,7 @@ inline constexpr bool traits::is_lazy<Lazy<F>> = true;
 /// ## Idempotent
 /// The lazyness factory function is idempotent. Lazy<Lazy<T>> == Lazy<T>.
 export template <typename F>
-constexpr Lazy<F> lazy(F f) {
+constexpr auto lazily(F f) {
     if constexpr (traits::IsLazy<F>) {
         return f;
     } else {

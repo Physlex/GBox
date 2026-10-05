@@ -30,6 +30,7 @@ export module gbox.funky.fn:chain;
 import gbox.core;
 
 import :chain.traits;
+import :lazy;
 import :lazy.traits;
 import :partial.traits;
 
@@ -65,7 +66,7 @@ class Chain : public For<Chain<F, G>, Where<Chainable<Self>, Bindable<Self>>> {
     /// directly to the owning type.
     template <typename... Args>
         requires(
-            !IsLazy<F> && !IsLazy<G> && std::invocable<F, Args...> &&
+            std::invocable<F, Args...> &&
             std::invocable<G, std::invoke_result_t<F, Args...>>
         )
     constexpr decltype(auto) operator()(Args &&...args) && {
@@ -73,27 +74,56 @@ class Chain : public For<Chain<F, G>, Where<Chainable<Self>, Bindable<Self>>> {
         return std::move(this->g_)(std::forward<decltype(fn_res)>(fn_res));
     }
 
+    /// Consumes the chain, handing back its first and second stages
+    constexpr std::pair<F, G> split() && {
+        return {std::move(this->f_), std::move(this->g_)};
+    }
+
   private:
     [[no_unique_address]] F f_;
     [[no_unique_address]] G g_;
 };
 
+template <class F, class G>
+inline constexpr bool traits::is_chain<Chain<F, G>> = true;
+
+/// Composes two stages into a [`Chain`] that nests on the right.
+///
+/// A chain given as the first stage is split, and the new stage is composed onto its
+/// second, so `(a | b) | c` builds the same shape as `a | (b | c)`.
+template <class F, class G>
+constexpr auto compose(F f, G g) {
+    if constexpr (traits::IsChain<F>) {
+        auto [head, tail] = std::move(f).split();
+        auto rest = compose(std::move(tail), std::move(g));
+
+        return Chain<decltype(head), decltype(rest)>(std::move(head), std::move(rest));
+    } else {
+        return Chain<F, G>(std::move(f), std::move(g));
+    }
+}
+
 namespace traits {
 
-/// Composes two callables into a [`Chain`], provided both are chainable
+/// Composes two callables into a [`Chain`], provided the first is chainable.
+///
+/// A lazy first stage makes the whole chain lazy: the laziness is lifted off the first
+/// stage and placed around the chain instead.
 export template <class F, class G>
     requires(IsChainable<F>)
 constexpr auto operator|(F &&f, G &&g) {
-    return Chain<std::decay_t<F>, std::decay_t<G>>(
-        std::forward<F>(f), std::forward<G>(g)
-    );
+    if constexpr (IsLazy<F>) {
+        return lazy::Lazy(compose(
+            std::decay_t<F>(std::forward<F>(f)).strip(),
+            std::decay_t<G>(std::forward<G>(g))
+        ));
+    } else {
+        return compose(
+            std::decay_t<F>(std::forward<F>(f)), std::decay_t<G>(std::forward<G>(g))
+        );
+    }
 }
 
 }  // namespace traits
 
 }  // namespace chain
-
-/// A chain is lazy if either of the two containing types are also lazy
-template <class F, class G>
-inline constexpr bool lazy::traits::is_lazy<chain::Chain<F, G>> =
-    lazy::traits::is_lazy<F> || lazy::traits::is_lazy<G>;

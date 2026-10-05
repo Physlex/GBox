@@ -21,6 +21,7 @@ export module gbox.funky.fn:partial;
 import gbox.core;
 
 import :chain.traits;
+import :lazy;
 import :lazy.traits;
 import :partial.traits;
 
@@ -71,7 +72,7 @@ class Partial : public For<Partial<C, Bound...>, Where<Chainable<Self>, Bindable
     /// call
     /// ```
     template <typename... Args>
-        requires(!IsLazy<C> && std::invocable<C, std::decay_t<Bound>..., Args...>)
+        requires(std::invocable<C, std::decay_t<Bound>..., Args...>)
     constexpr decltype(auto) operator()(Args &&...args) && {
         return std::apply(
             [&](auto &&...bound) -> decltype(auto) {
@@ -88,7 +89,7 @@ class Partial : public For<Partial<C, Bound...>, Where<Chainable<Self>, Bindable
     /// Available when the wrapped callable is invocable as an lvalue and takes the bound
     /// arguments without consuming them, since the layer keeps owning them.
     template <typename... Args>
-        requires(!IsLazy<C> && std::invocable<C &, std::decay_t<Bound> &..., Args...>)
+        requires(std::invocable<C &, std::decay_t<Bound> &..., Args...>)
     constexpr decltype(auto) operator()(Args &&...args) & {
         return std::apply(
             [&](auto &...bound) -> decltype(auto) {
@@ -103,6 +104,10 @@ class Partial : public For<Partial<C, Bound...>, Where<Chainable<Self>, Bindable
     [[no_unique_address]] std::tuple<std::decay_t<Bound>...> args_;
 };
 
+/// Deduction guideline for building a layer straight from a stage and its arguments
+template <class C, class... Bound>
+Partial(C, Bound...) -> Partial<C, std::decay_t<Bound>...>;
+
 namespace traits {
 
 /// Binds a single argument ahead of the call, producing a layer that owns it.
@@ -112,15 +117,26 @@ namespace traits {
 ///
 /// # Example
 /// ```cpp
-/// auto layered = f << 1 << 2;
-/// // Partial<Partial<decltype(f), int32_t>, int32_t>
+/// auto layered = f << 1 << 2; // Partial<Partial<decltype(f), int32_t>, int32_t>
 /// ```
 template <class F, class A>
     requires(IsBindable<F>)
 [[nodiscard]] constexpr auto operator<<(F &&f, A &&arg) {
-    return Partial<std::decay_t<F>, std::decay_t<A>>(
-        std::forward<F>(f), std::forward<A>(arg)
-    );
+    auto stage = [fn = std::decay_t<F>(std::forward<F>(f))]() mutable {
+        if constexpr (IsLazy<F>) {
+            return std::move(fn).strip();
+        } else {
+            return std::move(fn);
+        }
+    }();
+
+    auto partial = Partial(std::move(stage), std::forward<A>(arg));
+
+    if constexpr (IsLazy<F>) {
+        return lazy::Lazy(std::move(partial));
+    } else {
+        return partial;
+    }
 }
 
 /// Binds every element of a tuple ahead of the call, producing one flat layer that owns
@@ -143,14 +159,26 @@ template <class F, class A>
 template <class F, class... Args>
     requires(IsBindable<F>)
 [[nodiscard]] constexpr auto operator<<(F &&f, std::tuple<Args...> args) {
-    return std::apply(
-        [&f](auto &&...bound) {
-            return Partial<std::decay_t<F>, std::decay_t<Args>...>(
-                std::forward<F>(f), std::forward<decltype(bound)>(bound)...
-            );
+    auto stage = [fn = std::decay_t<F>(std::forward<F>(f))]() mutable {
+        if constexpr (IsLazy<F>) {
+            return std::move(fn).strip();
+        } else {
+            return std::move(fn);
+        }
+    }();
+
+    auto partial = std::apply(
+        [&stage](auto &&...bound) {
+            return Partial(std::move(stage), std::forward<decltype(bound)>(bound)...);
         },
         std::move(args)
     );
+
+    if constexpr (IsLazy<F>) {
+        return lazy::Lazy(std::move(partial));
+    } else {
+        return partial;
+    }
 }
 
 }  // namespace traits

@@ -68,13 +68,13 @@ static_assert(
 /// How the arguments were supplied is what decides which of the two shapes results
 static_assert(
     std::same_as<
-        decltype(first_bound() << 2), Partial<Partial<Stateless, int32_t>, int32_t> >,
+        decltype(first_bound() << 2), Partial<Partial<Stateless, int32_t>, int32_t>>,
     "binding one argument at a time nests one layer per argument"
 );
 static_assert(
     std::same_as<
         decltype(empty_layer() << std::tuple{1, 2}),
-        Partial<Partial<Stateless>, int32_t, int32_t> >,
+        Partial<Partial<Stateless>, int32_t, int32_t>>,
     "binding a tuple spreads its elements across one flat layer"
 );
 
@@ -92,4 +92,16 @@ static_assert(
 static_assert(
     Partial<Stateless, int32_t>(Stateless{}, 1)(2) == 3,
     "an argument given at the call arrives after the bound arguments"
+);
+
+/// A layer given all of its arguments runs and hands back the result itself
+static_assert(
+    std::same_as<std::invoke_result_t<Partial<Stateless, int32_t, int32_t>>, int32_t>,
+    "a fully bound layer runs when called and returns the callable's result"
+);
+
+/// A layer still missing arguments has nothing to run
+static_assert(
+    !std::invocable<Partial<Stateless, int32_t>>,
+    "a layer missing an argument cannot be called"
 );
