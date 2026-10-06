@@ -47,6 +47,11 @@ class Ring {
     /// Checks whether the ring buffer has zero enqueued items
     [[nodiscard]] bool is_empty() const { return this->count_ == 0; }
 
+    /// Checks whether the ring bfufer is full
+    [[nodiscard]] bool is_full() const {
+        return this->reader_ == this->writer_ && this->count_ != 0;
+    }
+
     /// The current count of elements enqueued within the ringbuffer
     [[nodiscard]] std::size_t count() const { return this->count_; }
 

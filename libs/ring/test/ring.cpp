@@ -30,3 +30,39 @@ TEST(ringOwnedBounds, ringTests) {
     ASSERT_TRUE(buffer.pop().is_ok());
     ASSERT_TRUE(buffer.pop().is_err());
 }
+
+TEST(ringOwnedIsFullWhenEmpty, ringTests) {
+    ring::RingBuffer<int, 1> buffer = {};
+
+    ASSERT_FALSE(buffer.is_full()) << "an empty ring must not report full";
+}
+
+TEST(ringOwnedIsFullAfterFillingPush, ringTests) {
+    constexpr int VALUE = 1;
+    ring::RingBuffer<int, 1> buffer = {};
+
+    ASSERT_TRUE(buffer.push(VALUE).is_ok()) << "push into an empty ring must succeed";
+
+    ASSERT_TRUE(buffer.is_full()) << "a ring at capacity must report full";
+}
+
+TEST(ringOwnedIsFullAfterDrainingPop, ringTests) {
+    constexpr int VALUE = 1;
+    ring::RingBuffer<int, 1> buffer = {};
+
+    ASSERT_TRUE(buffer.push(VALUE).is_ok()) << "push into an empty ring must succeed";
+    ASSERT_TRUE(buffer.pop().is_ok()) << "pop from a full ring must succeed";
+
+    ASSERT_FALSE(buffer.is_full()) << "a drained ring must not report full";
+}
+
+TEST(ringOwnedIsFullOnlyWhenFilled, ringTests) {
+    constexpr int VALUE = 1;
+    ring::RingBuffer<int, 2> buffer = {};
+
+    ASSERT_TRUE(buffer.push(VALUE).is_ok()) << "first push must succeed";
+    ASSERT_FALSE(buffer.is_full()) << "a ring below capacity must not report full";
+
+    ASSERT_TRUE(buffer.push(VALUE).is_ok()) << "filling push must succeed";
+    ASSERT_TRUE(buffer.is_full()) << "a ring at capacity must report full";
+}
