@@ -122,7 +122,8 @@ namespace traits {
 template <class F, class A>
     requires(IsBindable<F>)
 [[nodiscard]] constexpr auto operator<<(F &&f, A &&arg) {
-    auto stage = [fn = std::decay_t<F>(std::forward<F>(f))]() mutable {
+    auto owned = std::decay_t<F>(std::forward<F>(f));
+    auto stage = [fn = std::move(owned)]() mutable {
         if constexpr (IsLazy<F>) {
             return std::move(fn).strip();
         } else {
@@ -159,7 +160,8 @@ template <class F, class A>
 template <class F, class... Args>
     requires(IsBindable<F>)
 [[nodiscard]] constexpr auto operator<<(F &&f, std::tuple<Args...> args) {
-    auto stage = [fn = std::decay_t<F>(std::forward<F>(f))]() mutable {
+    auto owned = std::decay_t<F>(std::forward<F>(f));
+    auto stage = [fn = std::move(owned)]() mutable {
         if constexpr (IsLazy<F>) {
             return std::move(fn).strip();
         } else {
