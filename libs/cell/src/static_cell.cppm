@@ -17,20 +17,17 @@ module;
 
 export module gbox.cell:static_cell;
 
-import :static_ref;
-import :static_t;
-
 import gbox.core;
 import gbox.funky;
 
 using memory::Pinned;
+using memory::Static;
+using memory::StaticRef;
 using option::None;
 using option::Option;
 using option::Some;
 using result::Err;
 using result::Ok;
-using static_ref::StaticRef;
-using static_t::Static;
 
 export namespace static_cell {
 

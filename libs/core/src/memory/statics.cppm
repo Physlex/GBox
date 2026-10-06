@@ -1,32 +1,39 @@
 module;
 
 //! This module implements the `Static` type, a wrapper which holds a value that is never
-//! destroyed.
+//! destroyed, and the `StaticRef` type, a handle to a value which lives for the length of
+//! the program.
 //!
 //! A value handed to a `Static` is constructed in place and abandoned: no destructor is
 //! ever run against it, and the wrapper itself is trivially destructible, so an object of
 //! static storage duration holding one registers nothing to run at exit.
+//!
+//! A `StaticRef` is formed from a `Static`, the only storage in the toolkit which never
+//! destroys what it holds. Holding one is therefore a claim the compiler can carry
+//! through a program: the value behind it cannot be destroyed, so a reference to it
+//! cannot dangle.
+//!
+//! Prefer taking a `StaticRef<T>` over a `T &` wherever a type is expected to outlive its
+//! caller, since the reference then carries that expectation itself.
 
 #include <concepts>
 #include <new>
 #include <type_traits>
 #include <utility>
 
-export module gbox.cell:static_t;
+export module gbox.core.memory:statics;
 
-import gbox.core;
+import gbox.core.mixins;
+import :policies;
 
-using memory::MoveOnly;
-
-export namespace static_t {
+export namespace memory {
 
 /// Holds a value of type `T` which outlives every scope it appears in.
 ///
 /// # Example
 /// ```cpp
-/// StaticCell<Counter> cell;
-/// auto ref = cell.init(Counter(0)).assume_ok();
-/// ref->tick();
+/// auto counter = Static<Counter>(0);
+/// counter.get().tick();
 /// ```
 template <typename T>
 class Static final : public For<Static<T>, Where<MoveOnly<Self>>> {
@@ -105,4 +112,31 @@ class Static final : public For<Static<T>, Where<MoveOnly<Self>>> {
         impl_;
 };
 
-}  // namespace static_t
+/// Points at a value which is never destroyed.
+///
+/// # Example
+/// ```cpp
+/// auto counter = Static<Counter>(0);
+/// auto ref = StaticRef<Counter>(counter);
+/// ref->tick();
+/// ```
+template <typename T>
+class StaticRef final : public For<StaticRef<T>, Where<MoveOnly<Self>>> {
+  public:
+    /// Points the reference at the value a `Static` holds
+    explicit StaticRef(Static<T> &leaked) : ptr_(&leaked.get()) {}
+
+    /// Borrows the referenced value
+    T &operator*() const { return *this->ptr_; }
+
+    /// Reaches a member of the referenced value
+    T *operator->() const { return this->ptr_; }
+
+    /// Borrows the referenced value
+    T &get() const { return *this->ptr_; }
+
+  private:
+    T *ptr_;
+};
+
+}  // namespace memory

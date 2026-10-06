@@ -6,17 +6,17 @@
 #include <type_traits>
 #include <utility>
 
-import gbox.cell;
+import gbox.core;
 
 // The storage carries no destructor of its own, whichever branch a type selects, so
 // nothing containing it is registered to run at exit.
-static_assert(std::is_trivially_destructible_v<cell::Static<Probe>>);
-static_assert(std::is_trivially_destructible_v<cell::Static<int>>);
+static_assert(std::is_trivially_destructible_v<memory::Static<Probe>>);
+static_assert(std::is_trivially_destructible_v<memory::Static<int>>);
 
 // Storage which is never destroyed may only ever name one value, so it is moved rather
 // than copied.
-static_assert(std::is_move_constructible_v<cell::Static<Probe>>);
-static_assert(!std::is_copy_constructible_v<cell::Static<Probe>>);
+static_assert(std::is_move_constructible_v<memory::Static<Probe>>);
+static_assert(!std::is_copy_constructible_v<memory::Static<Probe>>);
 
 namespace {
 
@@ -29,7 +29,7 @@ constexpr int ABANDONED_ID = 5;
 
 /// Construct a `Static` from the arguments of its held type and read the value back
 TEST(staticInPlace, staticTests) {
-    auto held = cell::Static<Probe>(PLACED_ID);
+    auto held = memory::Static<Probe>(PLACED_ID);
 
     ASSERT_EQ(PLACED_ID, held.get().value);
 }
@@ -39,7 +39,7 @@ TEST(staticFromExistingValue, staticTests) {
     Probe::destroyed = 0;
 
     auto probe = Probe(EXISTING_ID);
-    auto held = cell::Static<Probe>(std::move(probe));
+    auto held = memory::Static<Probe>(std::move(probe));
 
     ASSERT_EQ(EXISTING_ID, held.get().value);
     ASSERT_EQ(0, Probe::destroyed);
@@ -50,7 +50,7 @@ TEST(staticNoDestructor, staticTests) {
     Probe::destroyed = 0;
 
     {
-        auto held = cell::Static<Probe>(1);
+        auto held = memory::Static<Probe>(1);
         ASSERT_EQ(1, held.get().value);
     }
 
@@ -61,7 +61,7 @@ TEST(staticNoDestructor, staticTests) {
 TEST(staticMove, staticTests) {
     Probe::destroyed = 0;
 
-    auto held = cell::Static<Probe>(3);
+    auto held = memory::Static<Probe>(3);
     auto moved = std::move(held);
 
     ASSERT_EQ(3, moved.get().value);
@@ -76,7 +76,7 @@ TEST(staticMoveAbandonsSource, staticTests) {
     Probe::destroyed = 0;
 
     {
-        auto held = cell::Static<Probe>(ABANDONED_ID);
+        auto held = memory::Static<Probe>(ABANDONED_ID);
         auto moved = std::move(held);
 
         ASSERT_TRUE(moved.get().owner);
@@ -92,8 +92,8 @@ TEST(staticMoveAbandonsSource, staticTests) {
 TEST(staticMoveAssign, staticTests) {
     Probe::destroyed = 0;
 
-    auto held = cell::Static<Probe>(2);
-    auto other = cell::Static<Probe>(4);
+    auto held = memory::Static<Probe>(2);
+    auto other = memory::Static<Probe>(4);
 
     held = std::move(other);
 

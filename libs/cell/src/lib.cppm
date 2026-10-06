@@ -22,15 +22,11 @@
 export module gbox.cell;
 
 export import :static_cell;
-export import :static_ref;
-export import :static_t;
 
 export namespace cell {
 
 using static_cell::Error;
 using static_cell::StaticCell;
-using static_ref::StaticRef;
-using static_t::Static;
 
 template <typename T>
 using Result = static_cell::Result<T>;

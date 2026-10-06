@@ -10,7 +10,7 @@ module;
 //! take no host of their own. Both may appear in the same [`For`], in any order, and a
 //! group may be named ahead of time and reused across classes.
 
-export module gbox.core:mixins;
+export module gbox.core.mixins;
 
 /// Stands in for the class a policy is applied to.
 export struct Self;

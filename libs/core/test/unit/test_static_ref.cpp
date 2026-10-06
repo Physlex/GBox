@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <type_traits>
 
-import gbox.cell;
+import gbox.core;
 
 namespace {
 
@@ -19,19 +19,19 @@ struct Counter {
 }  // namespace
 
 // A reference names a single holder of a static-lifetime value, passed on by move.
-static_assert(std::is_move_constructible_v<cell::StaticRef<Counter>>);
-static_assert(!std::is_copy_constructible_v<cell::StaticRef<Counter>>);
+static_assert(std::is_move_constructible_v<memory::StaticRef<Counter>>);
+static_assert(!std::is_copy_constructible_v<memory::StaticRef<Counter>>);
 
 // A reference is only ever formed from storage that already holds a value, so there is no
 // way to arrive at one which points at nothing.
-static_assert(!std::is_default_constructible_v<cell::StaticRef<Counter>>);
-static_assert(!std::is_constructible_v<cell::StaticRef<Counter>, std::nullptr_t>);
-static_assert(!std::is_constructible_v<cell::StaticRef<Counter>, Counter *>);
+static_assert(!std::is_default_constructible_v<memory::StaticRef<Counter>>);
+static_assert(!std::is_constructible_v<memory::StaticRef<Counter>, std::nullptr_t>);
+static_assert(!std::is_constructible_v<memory::StaticRef<Counter>, Counter *>);
 
 /// Reach the referenced value through the dereference operator
 TEST(staticRefDeref, staticRefTests) {
-    auto held = cell::Static<Counter>();
-    auto ref = cell::StaticRef<Counter>(held);
+    auto held = memory::Static<Counter>();
+    auto ref = memory::StaticRef<Counter>(held);
 
     (*ref).tick();
 
@@ -40,8 +40,8 @@ TEST(staticRefDeref, staticRefTests) {
 
 /// Reach a member of the referenced value through the arrow operator
 TEST(staticRefArrow, staticRefTests) {
-    auto held = cell::Static<Counter>();
-    auto ref = cell::StaticRef<Counter>(held);
+    auto held = memory::Static<Counter>();
+    auto ref = memory::StaticRef<Counter>(held);
 
     ref->tick();
     ref->tick();
@@ -51,8 +51,8 @@ TEST(staticRefArrow, staticRefTests) {
 
 /// Borrow the referenced value directly
 TEST(staticRefGet, staticRefTests) {
-    auto held = cell::Static<Counter>();
-    auto ref = cell::StaticRef<Counter>(held);
+    auto held = memory::Static<Counter>();
+    auto ref = memory::StaticRef<Counter>(held);
 
     ref.get().tick();
 
