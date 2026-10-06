@@ -45,7 +45,16 @@ struct Expand<Host, Where<Policy...>> {
 
 template <typename Host, typename... Base>
 struct Expand<Host, MixIn<Base...>> {
-    struct type : Base... {};
+    struct type : Base... {
+        type() = default;
+        type(const type &) = default;
+        type(type &&) = default;
+        type &operator=(const type &) = default;
+        type &operator=(type &&) = default;
+
+      protected:
+        ~type() = default;
+    };
 };
 
 /// Defines a constructor used to simplify policy aggregation across a classes inheritance
@@ -58,4 +67,13 @@ struct Expand<Host, MixIn<Base...>> {
 /// };
 /// ```
 export template <typename Host, typename... Group>
-struct For : Expand<Host, Group>::type... {};
+struct For : Expand<Host, Group>::type... {
+    For() = default;
+    For(const For &) = default;
+    For(For &&) = default;
+    For &operator=(const For &) = default;
+    For &operator=(For &&) = default;
+
+  protected:
+    ~For() = default;
+};

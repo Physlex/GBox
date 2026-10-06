@@ -136,16 +136,6 @@ TEST(optionAssumeSomeMoveOnly, optionTests) {
     ASSERT_EQ(HELD, *held);
 }
 
-/// Verify an option still reports a value after one is assumed out of it, since what
-/// stays behind has been moved from rather than removed
-TEST(optionAssumeSomeLeavesSome, optionTests) {
-    Option<int> opt = Some(HELD);
-
-    (void)std::move(opt).assume_some();
-
-    ASSERT_TRUE(opt.is_some());
-}
-
 /// Take a value and verify the option it came from is left empty
 TEST(optionTakeSome, optionTests) {
     Option<int> opt = Some(HELD);

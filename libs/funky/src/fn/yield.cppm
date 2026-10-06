@@ -30,6 +30,10 @@ class Yield {
 
     /// Move-only mirror of [`yield`]
     constexpr virtual R yield() && noexcept = 0;
+
+  protected:
+    /// Only an implementor tears a yield down, so the destructor stays trivial
+    ~Yield() = default;
 };
 
 /// Any class that publicly derives from `Yield<R>` is yieldable.

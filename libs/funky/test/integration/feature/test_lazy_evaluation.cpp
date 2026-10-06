@@ -154,6 +154,7 @@ TEST(lazyRuntimeAddition, lazyEvaluationTests) {
     int32_t a = LHS;
     int32_t b = RHS;
     YieldImpl<int32_t> auto work = lazily(once(counting_add(calls)))(a, b);
+    // NOLINTNEXTLINE(clang-analyzer-deadcode.DeadStores): work must not observe the store
     a = CLOBBERED;
 
     ASSERT_EQ(EXPECTED_CALLS_DEFERRED, calls) << "work ran before it was yielded";
